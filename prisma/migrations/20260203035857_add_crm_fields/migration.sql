@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Lead" ADD COLUMN "address" TEXT;
+ALTER TABLE "Lead" ADD COLUMN "city" TEXT;
+ALTER TABLE "Lead" ADD COLUMN "company" TEXT;
+ALTER TABLE "Lead" ADD COLUMN "role" TEXT;
