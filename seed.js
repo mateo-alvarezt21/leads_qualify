@@ -4,8 +4,12 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-    const email = 'nelsondcarvajal@gmail.com';
-    const password = 'Lancelot.012025';
+    const email = process.env.SEED_ADMIN_EMAIL || 'admin@leadquality.com';
+    const password = process.env.SEED_ADMIN_PASSWORD;
+    if (!password) {
+        console.error('Error: SEED_ADMIN_PASSWORD environment variable is required');
+        process.exit(1);
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
 
     try {
@@ -23,14 +27,14 @@ async function main() {
             where: { email },
             update: {
                 password: hashedPassword,
-                role: 'admin',
+                role: 'superadmin',
                 organizationId: org.id
             },
             create: {
                 email,
-                name: 'Nelson Carvajal',
+                name: process.env.SEED_ADMIN_NAME || 'Admin',
                 password: hashedPassword,
-                role: 'admin',
+                role: 'superadmin',
                 organizationId: org.id
             },
         });

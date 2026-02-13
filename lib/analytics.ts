@@ -7,9 +7,10 @@ export interface AnalyticsData {
     growth: { date: string; count: number }[];
 }
 
-export async function getAnalyticsData(): Promise<AnalyticsData> {
-    // 1. Fetch all leads with relevant fields to minimize DB calls
+export async function getAnalyticsData(organizationId: string): Promise<AnalyticsData> {
+    // 1. Fetch leads scoped to the organization
     const leads = await prisma.lead.findMany({
+        where: { organizationId },
         select: {
             id: true,
             initialScore: true,

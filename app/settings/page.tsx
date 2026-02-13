@@ -3,12 +3,12 @@ import { updateSettings } from '@/app/actions/settings';
 import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Users } from 'lucide-react';
+import { ArrowLeft, Save, Users, LogOut } from 'lucide-react';
 import { WhatsAppSettings } from '@/components/WhatsAppSettings';
+import { LogoutButton } from '@/components/LogoutButton';
+import { DEFAULT_SCORING_PROMPT } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
-
-const DEFAULT_PROMPT = "Analiza el lead. Si tiene nombre completo, email y teléfono suma 50 puntos. Si el email parece corporativo suma 20 puntos. Si menciona interés explícito suma 30 puntos.";
 
 export default async function SettingsPage() {
     const session = await getSession();
@@ -33,7 +33,7 @@ export default async function SettingsPage() {
         }),
     ]);
 
-    const currentPrompt = promptConfig?.value || DEFAULT_PROMPT;
+    const currentPrompt = promptConfig?.value || DEFAULT_SCORING_PROMPT;
     const currentWelcome = welcomeConfig?.value ?? 'Hola {nombre}, hemos recibido tu mensaje. Un asesor te contactara pronto.';
     const currentWaScoringPrompt = waScoringConfig?.value ?? '';
     const currentBufferTimeout = bufferTimeoutConfig?.value ?? '2';
@@ -46,9 +46,12 @@ export default async function SettingsPage() {
     return (
         <main className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 p-8">
             <div className="max-w-4xl mx-auto">
-                <Link href="/" className="inline-flex items-center gap-2 text-zinc-500 hover:text-brand mb-8 transition-colors">
-                    <ArrowLeft size={18} /> Volver al Inicio
-                </Link>
+                <div className="flex items-center justify-between mb-8">
+                    <Link href="/" className="inline-flex items-center gap-2 text-zinc-500 hover:text-brand transition-colors">
+                        <ArrowLeft size={18} /> Volver al Inicio
+                    </Link>
+                    <LogoutButton />
+                </div>
 
                 <h1 className="text-3xl font-light mb-8">Configuración de <span className="text-brand font-semibold">Calificación</span></h1>
 

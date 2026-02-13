@@ -17,8 +17,8 @@ export async function generateAnalysis() {
     if (leads.length === 0) return "No hay suficientes datos para generar un análisis.";
 
     // Basic stats
-    const won = leads.filter((l: any) => l.status === 'Cerrado-Ganado');
-    const lost = leads.filter((l: any) => l.status === 'Cerrado-Perdido');
+    const won = leads.filter((l: any) => l.status === 'Ganado');
+    const lost = leads.filter((l: any) => l.status === 'Perdido');
 
     const avg = (items: any[]) => items.length ? (items.reduce((s, l) => s + l.initialScore, 0) / items.length).toFixed(1) : 0;
 

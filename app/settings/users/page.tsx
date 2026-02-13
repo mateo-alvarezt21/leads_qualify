@@ -9,11 +9,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function UsersPage() {
     const session = await getSession();
-    if (!session || session.user.role !== 'admin') {
+    if (!session?.user?.organizationId || !['admin', 'superadmin'].includes(session.user.role)) {
         redirect('/');
     }
 
     const users = await prisma.user.findMany({
+        where: { organizationId: session.user.organizationId },
         orderBy: { createdAt: 'desc' }
     });
 

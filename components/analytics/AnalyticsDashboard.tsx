@@ -2,8 +2,8 @@ import { getAnalyticsData } from '@/lib/analytics';
 import { ConversionByScoreChart, StatusDistributionChart, SourceChart, GrowthChart } from './Charts';
 import { BarChart3, TrendingUp, PieChart, Target } from 'lucide-react';
 
-export async function AnalyticsDashboard() {
-    const data = await getAnalyticsData();
+export async function AnalyticsDashboard({ organizationId }: { organizationId: string }) {
+    const data = await getAnalyticsData(organizationId);
 
     return (
         <section className="mt-12 space-y-6">

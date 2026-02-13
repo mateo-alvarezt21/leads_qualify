@@ -1,7 +1,6 @@
 import { prisma } from './prisma';
 import { qualifyLead } from './ai';
-
-const DEFAULT_PROMPT = "Analiza el lead. Si tiene nombre completo, email y teléfono suma 50 puntos. Si el email parece corporativo suma 20 puntos. Si menciona interés explícito suma 30 puntos.";
+import { DEFAULT_SCORING_PROMPT } from './constants';
 
 export interface LeadInput {
     name: string;
@@ -32,7 +31,7 @@ export async function processNewLead(data: LeadInput, source: string, organizati
                 data: {
                     organizationId,
                     key: 'scoring_prompt',
-                    value: DEFAULT_PROMPT
+                    value: DEFAULT_SCORING_PROMPT
                 }
             });
         } catch (e) {
@@ -48,7 +47,7 @@ export async function processNewLead(data: LeadInput, source: string, organizati
         }
     }
 
-    const promptToUse = config?.value || DEFAULT_PROMPT;
+    const promptToUse = config?.value || DEFAULT_SCORING_PROMPT;
 
     // 2. Qualify
     const qualification = await qualifyLead(data, promptToUse);

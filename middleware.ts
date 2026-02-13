@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
     await updateSession(request);
 
     const sessionCookie = request.cookies.get('session');
-    let user = null;
+    let user: any = null;
     if (sessionCookie) {
         try {
             const payload = await decrypt(sessionCookie.value);
@@ -20,6 +20,7 @@ export async function middleware(request: NextRequest) {
     // 2. Define protected paths and public paths
     const isPublicPath =
         path === '/login' ||
+        path === '/register' ||
         path === '/forgot-password' ||
         path.startsWith('/api/') || // Let API handle its own auth or public webhooks
         path.startsWith('/_next') ||
@@ -31,8 +32,13 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // If user IS logged in and tries to access Login page -> Redirect to Home
-    if (user && path === '/login') {
+    // If user IS logged in and tries to access Login or Register page -> Redirect to Home
+    if (user && (path === '/login' || path === '/register')) {
+        return NextResponse.redirect(new URL('/', request.url));
+    }
+
+    // Protect /admin routes - only superadmin
+    if (path.startsWith('/admin') && user?.role !== 'superadmin') {
         return NextResponse.redirect(new URL('/', request.url));
     }
 

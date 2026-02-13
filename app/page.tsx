@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { LeadTable } from '@/components/LeadTable';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import Link from 'next/link';
-import { Settings, BarChart3, Globe } from 'lucide-react';
+import { Settings, BarChart3, Globe, Shield } from 'lucide-react';
 import { Prisma } from '@prisma/client';
 import { getSession } from '@/lib/auth';
 
@@ -75,6 +75,11 @@ export default async function Home({
           </div>
 
           <nav className="flex gap-4">
+            {session.user.role === 'superadmin' && (
+              <Link href="/admin" className="flex items-center gap-2 text-sm hover:text-brand transition-colors">
+                <Shield size={16} /> Admin
+              </Link>
+            )}
             <Link href="/webhooks" className="flex items-center gap-2 text-sm hover:text-brand transition-colors">
               <Globe size={16} /> Webhooks
             </Link>
@@ -103,7 +108,7 @@ export default async function Home({
           totalCount={totalCount}
         />
 
-        <AnalyticsDashboard />
+        <AnalyticsDashboard organizationId={session.user.organizationId} />
       </div>
     </main>
   );

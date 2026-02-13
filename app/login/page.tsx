@@ -88,12 +88,18 @@ export default function LoginPage() {
                     </button>
                 </form>
 
-                <div className="mt-6 text-center">
+                <div className="mt-6 text-center space-y-2">
                     <Link
                         href="/forgot-password"
-                        className="text-xs text-zinc-400 hover:text-brand transition-colors border-b border-transparent hover:border-brand pb-0.5"
+                        className="block text-xs text-zinc-400 hover:text-brand transition-colors border-b border-transparent hover:border-brand pb-0.5 inline-block"
                     >
                         ¿He olvidado mi contraseña?
+                    </Link>
+                    <Link
+                        href="/register"
+                        className="block text-xs text-zinc-400 hover:text-brand transition-colors border-b border-transparent hover:border-brand pb-0.5 inline-block"
+                    >
+                        ¿No tienes cuenta? Regístrate
                     </Link>
                 </div>
             </div>

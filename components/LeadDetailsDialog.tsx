@@ -70,8 +70,8 @@ export function LeadDetailsDialog({ lead, isOpen, onClose }: LeadDetailsDialogPr
                                 <option value="Pendiente">Pendiente</option>
                                 <option value="Nuevo">Nuevo</option>
                                 <option value="Contactado">Contactado</option>
-                                <option value="Cerrado-Ganado">Cerrado - Ganado</option>
-                                <option value="Cerrado-Perdido">Cerrado - Perdido</option>
+                                <option value="Ganado">Ganado</option>
+                                <option value="Perdido">Perdido</option>
                             </select>
                         </div>
 

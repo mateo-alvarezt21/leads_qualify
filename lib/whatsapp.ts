@@ -10,6 +10,7 @@ import {
     proto
 } from '@whiskeysockets/baileys';
 import { prisma } from './prisma';
+import { DEFAULT_SCORING_PROMPT } from './constants';
 import pino from 'pino';
 
 // Persist state on globalThis to survive HMR re-evaluations in dev mode
@@ -456,8 +457,6 @@ async function flushBuffer(bufferKey: string) {
         const conversationText = messages.map(m => m.text).join('\n');
 
         // Get the WhatsApp-specific scoring prompt, fall back to general prompt
-        const DEFAULT_PROMPT = "Analiza el lead. Si tiene nombre completo, email y teléfono suma 50 puntos. Si el email parece corporativo suma 20 puntos. Si menciona interés explícito suma 30 puntos.";
-
         const [waPromptConfig, generalPromptConfig] = await Promise.all([
             prisma.systemConfig.findUnique({
                 where: { organizationId_key: { organizationId, key: 'whatsapp_scoring_prompt' } }
@@ -469,7 +468,7 @@ async function flushBuffer(bufferKey: string) {
 
         const promptToUse = (waPromptConfig?.value?.trim())
             || generalPromptConfig?.value
-            || DEFAULT_PROMPT;
+            || DEFAULT_SCORING_PROMPT;
 
         // Qualify with the full conversation
         const { qualifyLead } = await import('./ai');

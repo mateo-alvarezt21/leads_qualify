@@ -20,12 +20,24 @@ model Organization {
   leads       Lead[]
   settings    SystemConfig[]
   whatsappInstances WhatsAppInstance[]
+  licenseCodes LicenseCode[]
+}
+
+model LicenseCode {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  used           Boolean   @default(false)
+  usedAt         DateTime?
+  usedByEmail    String?
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime  @default(now())
 }
 
 model WhatsAppInstance {
   id             String       @id @default(cuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   name           String       // Label: "Ventas", "Soporte", etc.
   phone          String?      // Auto-filled on connect
@@ -57,10 +69,10 @@ model User {
   email          String   @unique
   name           String?
   password       String
-  role           String   @default("user") // admin | user
-  
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+  role           String   @default("user") // superadmin | admin | user
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -69,11 +81,11 @@ model User {
 model Lead {
   id           Int      @id @default(autoincrement())
 
-  organizationId String? // Optional for migration, should be required later
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   whatsappInstanceId String?
-  whatsappInstance   WhatsAppInstance? @relation(fields: [whatsappInstanceId], references: [id])
+  whatsappInstance   WhatsAppInstance? @relation(fields: [whatsappInstanceId], references: [id], onDelete: SetNull)
 
   source       String
   name         String
@@ -93,9 +105,9 @@ model Lead {
 
 model SystemConfig {
   id             Int      @id @default(autoincrement())
-  
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   key            String
   value          String
