@@ -112,18 +112,36 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
     const getStatusClasses = (status: string) => {
         switch (status) {
             case 'Pendiente':
-                return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800';
+                return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
             case 'Nuevo':
-                return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
+                return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
             case 'Contactado':
-                return 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800';
+                return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
             case 'Ganado':
-                return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
+                return 'bg-green-500/10 text-green-500 border-green-500/20';
             case 'Perdido':
-                return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
+                return 'bg-red-500/10 text-red-500 border-red-500/20';
             default:
-                return 'bg-zinc-50 text-zinc-700 border-zinc-200 dark:bg-zinc-900/20 dark:text-zinc-300 dark:border-zinc-800';
+                return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
         }
+    };
+
+    // Get initials from name
+    const getInitials = (name: string) => {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    };
+
+    // Get stroke color class based on score
+    const getScoreStrokeColor = (score: number) => {
+        if (score >= 80) return 'stroke-emerald-500';
+        if (score >= 50) return 'stroke-amber-500';
+        return 'stroke-red-500';
+    };
+
+    const getScoreTextColor = (score: number) => {
+        if (score >= 80) return 'text-emerald-500';
+        if (score >= 50) return 'text-amber-500';
+        return 'text-red-500';
     };
 
     return (
@@ -225,43 +243,26 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
             </div>
 
             {/* Table container */}
-            <div className="overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-black">
+            <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto min-h-[400px]">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-10">
-                            <tr>
-                                <th className="p-4 font-medium text-zinc-500 dark:text-zinc-400">
-                                    <span className="flex items-center gap-2"><User size={14} /> Prospecto</span>
-                                </th>
-                                <th className="p-4 font-medium text-zinc-500 dark:text-zinc-400">
-                                    <span className="flex items-center gap-2"><Globe size={14} /> Fuente</span>
-                                </th>
-                                <th className="p-4 font-medium text-zinc-500 dark:text-zinc-400">
-                                    <span className="flex items-center gap-2"><Smartphone size={14} /> Linea</span>
-                                </th>
-                                <th className="p-4 font-medium text-zinc-500 dark:text-zinc-400">
-                                    <span className="flex items-center gap-2"><Calendar size={14} /> Fecha</span>
-                                </th>
-                                <th className="p-4 font-medium text-center text-zinc-500 dark:text-zinc-400">
-                                    <span className="flex items-center justify-center gap-2"><Activity size={14} /> Estado</span>
-                                </th>
-                                <th className="p-4 font-medium text-right text-zinc-500 dark:text-zinc-400">
-                                    <span className="flex items-center justify-end gap-2"><Gauge size={14} /> Inicial</span>
-                                </th>
-                                <th className="p-4 font-medium text-right text-brand">
-                                    <span className="flex items-center justify-end gap-2"><Flame size={14} /> Temp.</span>
-                                </th>
-                                <th className="p-4 font-medium text-center text-zinc-500 dark:text-zinc-400 w-12">
-
-                                </th>
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="border-b border-slate-100 dark:border-border-dark">
+                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Prospecto</th>
+                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Temp.</th>
+                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Fuente</th>
+                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Línea</th>
+                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Fecha</th>
+                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Estado</th>
+                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right w-12"></th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        <tbody className="divide-y divide-slate-100 dark:divide-border-dark">
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="p-12 text-center text-zinc-500">
+                                    <td colSpan={7} className="px-8 py-16 text-center text-slate-400">
                                         <div className="flex flex-col items-center gap-2">
-                                            <AlertCircle size={32} className="text-zinc-300" />
+                                            <AlertCircle size={32} className="text-slate-300 dark:text-slate-600" />
                                             No se encontraron leads que coincidan con los filtros.
                                         </div>
                                     </td>
@@ -269,52 +270,62 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                             ) : (
                                 filtered.map(lead => {
                                     return (
-                                        <tr key={lead.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 transition-colors bg-white dark:bg-black group border-l-4 border-l-transparent hover:border-l-brand">
-                                            <td className="p-4">
+                                        <tr key={lead.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group">
+                                            <td className="px-8 py-5">
                                                 <button
                                                     onClick={() => setSelectedLead(lead)}
                                                     className="text-left outline-none"
                                                 >
-                                                    <div className="font-medium text-zinc-900 dark:text-zinc-100 group-hover:text-brand transition-colors">{lead.name}</div>
-                                                    <div className="text-xs text-zinc-500 flex items-center gap-1 mt-0.5">
-                                                        {lead.company && <span className="font-semibold">{lead.company} •</span>}
-                                                        {lead.email}
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-medium text-slate-600 dark:text-slate-300 shrink-0">
+                                                            {getInitials(lead.name)}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{lead.name}</div>
+                                                            <div className="text-xs text-slate-500">
+                                                                {lead.company && <span>{lead.company} · </span>}
+                                                                {lead.email}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </button>
                                             </td>
-                                            <td className="p-4">
-                                                <span className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-xs border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400">
+                                            <td className="px-8 py-5">
+                                                <div className="flex justify-center">
+                                                    <div className="relative w-14 h-14">
+                                                        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                                                            <circle className="stroke-slate-200 dark:stroke-slate-800" cx="18" cy="18" fill="none" r="16" strokeWidth="3.5"></circle>
+                                                            <circle className={getScoreStrokeColor(lead.currentScore)} cx="18" cy="18" fill="none" r="16" strokeDasharray={`${lead.currentScore}, 100`} strokeLinecap="round" strokeWidth="3.5"></circle>
+                                                        </svg>
+                                                        <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${getScoreTextColor(lead.currentScore)}`}>{lead.currentScore}%</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-5">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                                                     {lead.source}
                                                 </span>
                                             </td>
-                                            <td className="p-4">
+                                            <td className="px-8 py-5">
                                                 {lead.whatsappInstance ? (
-                                                    <span className="px-2 py-1 bg-green-50 dark:bg-green-900/20 rounded text-xs border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400">
-                                                        {lead.whatsappInstance.name}
-                                                    </span>
+                                                    <span className="text-sm text-accent font-medium">{lead.whatsappInstance.name}</span>
                                                 ) : (
-                                                    <span className="text-xs text-zinc-300 dark:text-zinc-600">-</span>
+                                                    <span className="text-sm text-slate-500">—</span>
                                                 )}
                                             </td>
-                                            <td className="p-4 text-zinc-500 whitespace-nowrap text-xs" suppressHydrationWarning>
+                                            <td className="px-8 py-5 text-slate-500 whitespace-nowrap text-sm" suppressHydrationWarning>
                                                 {new Date(lead.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                             </td>
-                                            <td className="p-4 text-center">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusClasses(lead.status)}`}>
+                                            <td className="px-8 py-5 text-right">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getStatusClasses(lead.status)}`}>
                                                     {lead.status}
                                                 </span>
                                             </td>
-                                            <td className="p-4 font-medium text-right text-zinc-400">
-                                                {lead.initialScore}%
-                                            </td>
-                                            <td className={`p-4 font-bold text-right text-lg ${getTempColor(lead.currentScore)}`}>
-                                                {lead.currentScore}%
-                                            </td>
-                                            <td className="p-4 text-center">
+                                            <td className="px-8 py-5 text-center">
                                                 <button
                                                     onClick={() => handleDelete(lead.id)}
                                                     disabled={isPending}
-                                                    className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
                                                     title="Eliminar lead"
                                                 >
                                                     <Trash2 size={16} />
@@ -327,6 +338,57 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination inside table card */}
+                <div className="px-8 py-4 border-t border-slate-100 dark:border-border-dark flex items-center justify-between text-sm text-slate-500">
+                    <span>Mostrando {initialLeads.length} de {totalCount} leads</span>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => {
+                                const params = new URLSearchParams(window.location.search);
+                                params.set('page', (currentPage - 1).toString());
+                                window.location.search = params.toString();
+                            }}
+                            disabled={currentPage <= 1}
+                            className="px-3 py-1.5 border border-slate-200 dark:border-border-dark rounded-md hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+                        >
+                            Anterior
+                        </button>
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                            const startPage = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+                            const page = startPage + i;
+                            if (page > totalPages) return null;
+                            return (
+                                <button
+                                    key={page}
+                                    onClick={() => {
+                                        const params = new URLSearchParams(window.location.search);
+                                        params.set('page', page.toString());
+                                        window.location.search = params.toString();
+                                    }}
+                                    className={`px-3 py-1.5 border border-slate-200 dark:border-border-dark rounded-md transition-colors ${
+                                        page === currentPage
+                                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
+                                            : 'hover:bg-slate-50 dark:hover:bg-white/5'
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            );
+                        })}
+                        <button
+                            onClick={() => {
+                                const params = new URLSearchParams(window.location.search);
+                                params.set('page', (currentPage + 1).toString());
+                                window.location.search = params.toString();
+                            }}
+                            disabled={currentPage >= totalPages}
+                            className="px-3 py-1.5 border border-slate-200 dark:border-border-dark rounded-md hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+                        >
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {selectedLead && (
@@ -336,40 +398,6 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                     onClose={() => setSelectedLead(null)}
                 />
             )}
-
-            {/* Pagination */}
-            <div className="flex items-center justify-between mt-4 px-2">
-                <span className="text-sm text-zinc-500">
-                    Mostrando {initialLeads.length} de {totalCount} resultados
-                </span>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => {
-                            const params = new URLSearchParams(window.location.search);
-                            params.set('page', (currentPage - 1).toString());
-                            window.location.search = params.toString();
-                        }}
-                        disabled={currentPage <= 1}
-                        className="px-3 py-1 border rounded text-sm hover:bg-zinc-50 disabled:opacity-50"
-                    >
-                        Anterior
-                    </button>
-                    <span className="text-sm">
-                        Página {currentPage} de {totalPages}
-                    </span>
-                    <button
-                        onClick={() => {
-                            const params = new URLSearchParams(window.location.search);
-                            params.set('page', (currentPage + 1).toString());
-                            window.location.search = params.toString();
-                        }}
-                        disabled={currentPage >= totalPages}
-                        className="px-3 py-1 border rounded text-sm hover:bg-zinc-50 disabled:opacity-50"
-                    >
-                        Siguiente
-                    </button>
-                </div>
-            </div>
         </div>
     );
 }

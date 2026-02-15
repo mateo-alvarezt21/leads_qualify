@@ -41,7 +41,7 @@ export default async function Home({
     ...(source && { source }),
   };
 
-  const [leads, totalCount] = await Promise.all([
+  const [leads, totalCount, organization] = await Promise.all([
     prisma.lead.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -53,21 +53,34 @@ export default async function Home({
         }
       }
     }),
-    prisma.lead.count({ where })
+    prisma.lead.count({ where }),
+    prisma.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: { logo: true, brandColor: true, name: true },
+    }),
   ]);
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
+  const customColor = organization?.brandColor || null;
+  const customLogo = organization?.logo || null;
+
   return (
-    <main className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100">
+    <main className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100"
+      {...(customColor ? { style: { '--color-brand': customColor, '--color-primary': customColor, '--color-accent': customColor } as React.CSSProperties } : {})}
+    >
       {/* Navbar / Header */}
       <header className="border-b border-brand/20 bg-zinc-50/50 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="flex items-center">
-              <img src="/logo-cntxt.png" alt="CNTXT" className="h-8 w-auto" />
-              <sup className="text-[10px] text-zinc-400 ml-0.5">®</sup>
-            </div>
+            {customLogo ? (
+              <img src={customLogo} alt={organization?.name || 'Logo'} className="h-8 w-auto" />
+            ) : (
+              <div className="flex items-center">
+                <img src="/logo-cntxt.png" alt="CNTXT" className="h-8 w-auto" />
+                <sup className="text-[10px] text-zinc-400 ml-0.5">®</sup>
+              </div>
+            )}
             <div className="w-px h-6 bg-zinc-300 dark:bg-zinc-700"></div>
             <h1 className="text-xl font-light tracking-wide">
               LEAD<span className="font-bold text-brand">QUALITY</span>

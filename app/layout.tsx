@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { BrandingStyle } from "@/components/BrandingStyle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
+        <BrandingStyle />
         {children}
 
         <footer className="mt-12 py-8 text-center border-t border-zinc-100 dark:border-zinc-900">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { RefreshCw, LogOut, Smartphone, Phone, CheckCircle, AlertCircle, Plus, Trash2, Wifi, WifiOff } from 'lucide-react';
+import { RefreshCw, LogOut, Smartphone, Phone, CheckCircle, AlertCircle, Plus, Trash2, Wifi, WifiOff, X } from 'lucide-react';
 
 interface WhatsAppInstanceData {
     id: string;
@@ -277,9 +277,18 @@ function InstanceCard({ instance, onConnect, onLogout, onDelete }: {
                 )}
 
                 {liveStatus === 'connecting' && (
-                    <div className="flex items-center justify-center py-4 text-zinc-500 gap-2">
-                        <RefreshCw className="animate-spin" size={16} />
-                        <span className="text-sm">Conectando con WhatsApp...</span>
+                    <div className="flex items-center justify-between py-4">
+                        <div className="flex items-center gap-2 text-zinc-500">
+                            <RefreshCw className="animate-spin" size={16} />
+                            <span className="text-sm">Conectando con WhatsApp...</span>
+                        </div>
+                        <button
+                            onClick={() => onLogout(id)}
+                            className="px-3 py-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                            <X size={14} />
+                            Cancelar
+                        </button>
                     </div>
                 )}
 
@@ -292,6 +301,13 @@ function InstanceCard({ instance, onConnect, onLogout, onDelete }: {
                             <p className="font-medium text-sm">Escanea el codigo con tu celular</p>
                             <p className="text-xs mt-1">WhatsApp &gt; Configuracion &gt; Dispositivos vinculados</p>
                         </div>
+                        <button
+                            onClick={() => onLogout(id)}
+                            className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 border border-red-200 dark:border-red-800"
+                        >
+                            <X size={14} />
+                            Cancelar conexión
+                        </button>
                     </div>
                 )}
 

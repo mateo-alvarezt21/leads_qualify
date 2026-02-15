@@ -108,3 +108,60 @@ export async function updateSettings(formData: FormData) {
         return { success: false, error: 'Error updating settings' };
     }
 }
+
+export async function updateBranding(data: { logo?: string | null; brandColor?: string | null }) {
+    try {
+        const session = await getSession();
+        if (!session?.user?.organizationId) return { success: false, error: 'No autorizado' };
+
+        // Only admin or superadmin can change branding
+        if (session.user.role !== 'admin' && session.user.role !== 'superadmin') {
+            return { success: false, error: 'No autorizado' };
+        }
+
+        // Validate logo size if base64 (max 500KB)
+        if (data.logo && data.logo.startsWith('data:')) {
+            const sizeInBytes = Math.ceil((data.logo.length * 3) / 4);
+            if (sizeInBytes > 512_000) {
+                return { success: false, error: 'El logo no puede pesar más de 500KB' };
+            }
+        }
+
+        // Validate color format
+        if (data.brandColor && !/^#[0-9a-fA-F]{6}$/.test(data.brandColor)) {
+            return { success: false, error: 'Color inválido. Usa formato hex (#FF5500)' };
+        }
+
+        const updateData: { logo?: string | null; brandColor?: string | null } = {};
+        if (data.logo !== undefined) updateData.logo = data.logo;
+        if (data.brandColor !== undefined) updateData.brandColor = data.brandColor;
+
+        await prisma.organization.update({
+            where: { id: session.user.organizationId },
+            data: updateData,
+        });
+
+        revalidatePath('/');
+        revalidatePath('/settings');
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating branding:', error);
+        return { success: false, error: 'Error al actualizar la marca' };
+    }
+}
+
+export async function getOrganizationBranding() {
+    try {
+        const session = await getSession();
+        if (!session?.user?.organizationId) return null;
+
+        const org = await prisma.organization.findUnique({
+            where: { id: session.user.organizationId },
+            select: { logo: true, brandColor: true, name: true },
+        });
+
+        return org;
+    } catch {
+        return null;
+    }
+}

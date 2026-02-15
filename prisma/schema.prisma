@@ -13,6 +13,8 @@ model Organization {
   name        String
   slug        String   @unique
   apiKey      String   @unique @default(cuid()) // For their private webhooks/API
+  logo        String?  // Base64 data URI or external URL
+  brandColor  String?  // Hex color, e.g. "#e0a641"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

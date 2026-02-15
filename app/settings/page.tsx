@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Users, LogOut } from 'lucide-react';
 import { WhatsAppSettings } from '@/components/WhatsAppSettings';
+import { BrandingSettings } from '@/components/BrandingSettings';
 import { LogoutButton } from '@/components/LogoutButton';
 import { DEFAULT_SCORING_PROMPT } from '@/lib/constants';
 
@@ -18,7 +19,7 @@ export default async function SettingsPage() {
 
     const orgId = session.user.organizationId;
 
-    const [promptConfig, welcomeConfig, waScoringConfig, bufferTimeoutConfig] = await Promise.all([
+    const [promptConfig, welcomeConfig, waScoringConfig, bufferTimeoutConfig, organization] = await Promise.all([
         prisma.systemConfig.findUnique({
             where: { organizationId_key: { organizationId: orgId, key: 'scoring_prompt' } }
         }),
@@ -30,6 +31,10 @@ export default async function SettingsPage() {
         }),
         prisma.systemConfig.findUnique({
             where: { organizationId_key: { organizationId: orgId, key: 'whatsapp_buffer_timeout' } }
+        }),
+        prisma.organization.findUnique({
+            where: { id: orgId },
+            select: { name: true, logo: true, brandColor: true },
         }),
     ]);
 
@@ -142,6 +147,15 @@ export default async function SettingsPage() {
 
                     {/* WhatsApp Integration */}
                     <WhatsAppSettings />
+
+                    {/* Branding - Admin only */}
+                    {(session.user.role === 'admin' || session.user.role === 'superadmin') && (
+                        <BrandingSettings
+                            currentLogo={organization?.logo ?? null}
+                            currentColor={organization?.brandColor ?? null}
+                            orgName={organization?.name ?? 'Mi Organización'}
+                        />
+                    )}
                 </div>
             </div>
 
