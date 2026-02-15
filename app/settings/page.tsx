@@ -107,7 +107,7 @@ export default async function SettingsPage() {
                                     <input
                                         type="number"
                                         name="whatsapp_buffer_timeout"
-                                        min="0.1"
+                                        min="0.5"
                                         max="30"
                                         step="0.5"
                                         className="w-32 p-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-black text-sm outline-none focus:border-brand transition-colors"
