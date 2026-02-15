@@ -6,7 +6,7 @@ import { updateLead } from '@/app/actions/leads';
 import { X, User, Mail, Phone, Building2, Briefcase, MapPin, Save, Loader2, MessageSquare } from 'lucide-react';
 
 interface LeadDetailsDialogProps {
-    lead: Lead;
+    lead: Lead & { currentScore?: number };
     isOpen: boolean;
     onClose: () => void;
 }
@@ -53,11 +53,19 @@ export function LeadDetailsDialog({ lead, isOpen, onClose }: LeadDetailsDialogPr
                     <div className="space-y-6">
                         <div className="bg-zinc-50 dark:bg-black p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 text-center">
                             <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider block mb-2">Temperatura</span>
-                            <div className={`text-5xl font-black ${lead.initialScore >= 80 ? 'text-green-500' :
-                                lead.initialScore >= 50 ? 'text-yellow-500' : 'text-red-500'
-                                }`}>
-                                {lead.initialScore}%
-                            </div>
+                            {(() => {
+                                const displayScore = lead.currentScore ?? lead.initialScore;
+                                return (
+                                    <div className={`text-5xl font-black ${displayScore >= 80 ? 'text-green-500' :
+                                        displayScore >= 50 ? 'text-yellow-500' : 'text-red-500'
+                                        }`}>
+                                        {displayScore}%
+                                    </div>
+                                );
+                            })()}
+                            {lead.currentScore !== undefined && lead.currentScore !== lead.initialScore && (
+                                <p className="text-[10px] text-zinc-400 mt-1">Inicial: {lead.initialScore}%</p>
+                            )}
                         </div>
 
                         <div>
