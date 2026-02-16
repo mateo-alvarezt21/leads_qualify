@@ -56,7 +56,7 @@ export default async function Home({
     prisma.lead.count({ where }),
     prisma.organization.findUnique({
       where: { id: session.user.organizationId },
-      select: { logo: true, brandColor: true, name: true },
+      select: { logo: true, brandColor: true, name: true, appNameFirst: true, appNameSecond: true },
     }),
   ]);
 
@@ -83,7 +83,7 @@ export default async function Home({
             )}
             <div className="w-px h-6 bg-zinc-300 dark:bg-zinc-700"></div>
             <h1 className="text-xl font-light tracking-wide">
-              LEAD<span className="font-bold text-brand">QUALITY</span>
+              {organization?.appNameFirst || 'LEAD'}<span className="font-bold text-brand">{organization?.appNameSecond || 'QUALITY'}</span>
             </h1>
           </div>
 

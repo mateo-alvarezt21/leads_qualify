@@ -249,7 +249,8 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                         <thead>
                             <tr className="border-b border-slate-100 dark:border-border-dark">
                                 <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Prospecto</th>
-                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Temp.</th>
+                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Temp. Inicial</th>
+                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Temp. Actual</th>
                                 <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Fuente</th>
                                 <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Línea</th>
                                 <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Fecha</th>
@@ -260,7 +261,7 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                         <tbody className="divide-y divide-slate-100 dark:divide-border-dark">
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-8 py-16 text-center text-slate-400">
+                                    <td colSpan={8} className="px-8 py-16 text-center text-slate-400">
                                         <div className="flex flex-col items-center gap-2">
                                             <AlertCircle size={32} className="text-slate-300 dark:text-slate-600" />
                                             No se encontraron leads que coincidan con los filtros.
@@ -289,6 +290,17 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                                                         </div>
                                                     </div>
                                                 </button>
+                                            </td>
+                                            <td className="px-8 py-5">
+                                                <div className="flex justify-center">
+                                                    <div className="relative w-14 h-14">
+                                                        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                                                            <circle className="stroke-slate-200 dark:stroke-slate-800" cx="18" cy="18" fill="none" r="16" strokeWidth="3.5"></circle>
+                                                            <circle className={getScoreStrokeColor(lead.initialScore)} cx="18" cy="18" fill="none" r="16" strokeDasharray={`${lead.initialScore}, 100`} strokeLinecap="round" strokeWidth="3.5"></circle>
+                                                        </svg>
+                                                        <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${getScoreTextColor(lead.initialScore)}`}>{lead.initialScore}%</span>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td className="px-8 py-5">
                                                 <div className="flex justify-center">

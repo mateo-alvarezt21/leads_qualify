@@ -15,6 +15,8 @@ model Organization {
   apiKey      String   @unique @default(cuid()) // For their private webhooks/API
   logo        String?  // Base64 data URI or external URL
   brandColor  String?  // Hex color, e.g. "#e0a641"
+  appNameFirst  String?  // Custom app name first part (replaces "LEAD")
+  appNameSecond String?  // Custom app name second part (replaces "QUALITY")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
