@@ -4,6 +4,10 @@ import { LeadSchema } from '@/lib/schemas';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
 
+export async function OPTIONS() {
+    return new NextResponse(null, { status: 204 });
+}
+
 export async function POST(req: NextRequest) {
     try {
         // Rate limit: 60 requests per minute per IP
