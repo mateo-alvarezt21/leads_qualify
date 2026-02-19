@@ -51,6 +51,24 @@ export async function POST(req: NextRequest) {
 
         const validData = validation.data;
 
+        // 2b. Validate required custom fields
+        const requiredCustomFields = await prisma.customField.findMany({
+            where: { organizationId: org.id, required: true },
+            select: { fieldName: true, fieldLabel: true },
+        });
+
+        const missingFields = requiredCustomFields.filter(
+            cf => body[cf.fieldName] === undefined || body[cf.fieldName] === null || body[cf.fieldName] === ''
+        );
+
+        if (missingFields.length > 0) {
+            return NextResponse.json({
+                success: false,
+                error: 'Campos requeridos faltantes',
+                missingFields: missingFields.map(f => ({ field: f.fieldName, label: f.fieldLabel })),
+            }, { status: 400 });
+        }
+
         const { searchParams } = new URL(req.url);
         const sourceParam = searchParams.get('source');
         const source = sourceParam || validData.source || 'Webhook';

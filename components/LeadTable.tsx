@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lead } from '@prisma/client';
+import { Lead, CustomField } from '@prisma/client';
 import { Search, Download, Filter, X, User, Globe, Calendar, Activity, Gauge, Flame, Trash2, AlertCircle, Smartphone } from 'lucide-react';
 import { AddLeadDialog } from './AddLeadDialog';
 import { LeadDetailsDialog } from './LeadDetailsDialog';
@@ -17,9 +17,17 @@ interface LeadTableProps {
     totalPages: number;
     currentPage: number;
     totalCount: number;
+    customFields?: CustomField[];
 }
 
-export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }: LeadTableProps) {
+const formatNumber = (raw: string | number) => {
+    const digits = String(raw).replace(/\D/g, '');
+    if (!digits) return String(raw);
+    return parseInt(digits, 10).toLocaleString('de-DE');
+};
+
+export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, customFields = [] }: LeadTableProps) {
+    const columnFields = customFields.filter(cf => cf.showAsColumn);
     const router = useRouter();
     const [textFilter, setTextFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('Todos');
@@ -254,6 +262,9 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                                 <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Fuente</th>
                                 <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Línea</th>
                                 <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Fecha</th>
+                                {columnFields.map(cf => (
+                                    <th key={cf.id} className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">{cf.fieldLabel}</th>
+                                ))}
                                 <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Estado</th>
                                 <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right w-12"></th>
                             </tr>
@@ -261,7 +272,7 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                         <tbody className="divide-y divide-slate-100 dark:divide-border-dark">
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-8 py-16 text-center text-slate-400">
+                                    <td colSpan={8 + columnFields.length} className="px-8 py-16 text-center text-slate-400">
                                         <div className="flex flex-col items-center gap-2">
                                             <AlertCircle size={32} className="text-slate-300 dark:text-slate-600" />
                                             No se encontraron leads que coincidan con los filtros.
@@ -270,6 +281,8 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                                 </tr>
                             ) : (
                                 filtered.map(lead => {
+                                    let leadRawData: Record<string, unknown> = {};
+                                    try { leadRawData = JSON.parse(lead.rawData || '{}'); } catch { /* ignore */ }
                                     return (
                                         <tr key={lead.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group">
                                             <td className="px-8 py-5">
@@ -328,6 +341,21 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                                             <td className="px-8 py-5 text-slate-500 whitespace-nowrap text-sm" suppressHydrationWarning>
                                                 {new Date(lead.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                             </td>
+                                            {columnFields.map(cf => {
+                                                const raw = leadRawData[cf.fieldName];
+                                                let display = raw !== undefined && raw !== null && raw !== '' ? String(raw) : '—';
+                                                if (cf.fieldType === 'number' && raw !== undefined && raw !== null && raw !== '') {
+                                                    display = formatNumber(String(raw));
+                                                }
+                                                if (cf.fieldType === 'boolean') {
+                                                    display = raw === true || raw === 'true' ? 'Sí' : raw === false || raw === 'false' ? 'No' : '—';
+                                                }
+                                                return (
+                                                    <td key={cf.id} className="px-8 py-5 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                                        {display}
+                                                    </td>
+                                                );
+                                            })}
                                             <td className="px-8 py-5 text-right">
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getStatusClasses(lead.status)}`}>
                                                     {lead.status}
@@ -408,6 +436,7 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount }:
                     lead={selectedLead}
                     isOpen={!!selectedLead}
                     onClose={() => setSelectedLead(null)}
+                    customFields={customFields}
                 />
             )}
         </div>

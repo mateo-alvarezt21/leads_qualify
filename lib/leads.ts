@@ -47,7 +47,21 @@ export async function processNewLead(data: LeadInput, source: string, organizati
         }
     }
 
-    const promptToUse = config?.value || DEFAULT_SCORING_PROMPT;
+    // Fetch custom fields to enrich the scoring prompt
+    const customFields = await prisma.customField.findMany({
+        where: { organizationId },
+        orderBy: { position: 'asc' },
+    });
+
+    let customFieldContext = '';
+    if (customFields.length > 0) {
+        const desc = customFields.map(cf =>
+            `- "${cf.fieldName}" (${cf.fieldLabel}): ${data[cf.fieldName] !== undefined ? JSON.stringify(data[cf.fieldName]) : 'no proporcionado'}`
+        ).join('\n');
+        customFieldContext = `\n\nCampos personalizados del lead:\n${desc}`;
+    }
+
+    const promptToUse = (config?.value || DEFAULT_SCORING_PROMPT) + customFieldContext;
 
     // 2. Qualify
     const qualification = await qualifyLead(data, promptToUse);

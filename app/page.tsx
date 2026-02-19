@@ -41,7 +41,7 @@ export default async function Home({
     ...(source && { source }),
   };
 
-  const [leads, totalCount, organization] = await Promise.all([
+  const [leads, totalCount, organization, customFields] = await Promise.all([
     prisma.lead.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -57,6 +57,10 @@ export default async function Home({
     prisma.organization.findUnique({
       where: { id: session.user.organizationId },
       select: { logo: true, brandColor: true, name: true, appNameFirst: true, appNameSecond: true },
+    }),
+    prisma.customField.findMany({
+      where: { organizationId: session.user.organizationId },
+      orderBy: { position: 'asc' },
     }),
   ]);
 
@@ -119,6 +123,7 @@ export default async function Home({
           totalPages={totalPages}
           currentPage={page}
           totalCount={totalCount}
+          customFields={customFields}
         />
 
         <AnalyticsDashboard organizationId={session.user.organizationId} />

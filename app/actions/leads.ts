@@ -56,6 +56,7 @@ interface ManualLeadData {
     address?: string;
     city?: string;
     status?: string; // Add status to interface for update
+    rawData?: string;
 }
 
 export async function addManualLead(data: ManualLeadData) {
@@ -101,7 +102,8 @@ export async function updateLead(leadId: number, data: Partial<ManualLeadData & 
                 role: data.role,
                 address: data.address,
                 city: data.city,
-                status: data.status
+                status: data.status,
+                ...(data.rawData !== undefined && { rawData: data.rawData })
             }
         });
 

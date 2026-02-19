@@ -20,11 +20,12 @@ model Organization {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users       User[]
-  leads       Lead[]
-  settings    SystemConfig[]
+  users         User[]
+  leads         Lead[]
+  settings      SystemConfig[]
   whatsappInstances WhatsAppInstance[]
-  licenseCodes LicenseCode[]
+  licenseCodes  LicenseCode[]
+  customFields  CustomField[]
 }
 
 model LicenseCode {
@@ -117,6 +118,23 @@ model SystemConfig {
   value          String
 
   @@unique([organizationId, key]) // Key is unique PER organization, not globally
+}
+
+model CustomField {
+  id             Int          @id @default(autoincrement())
+  organizationId String
+  fieldName      String       // JSON key: "utm_source"
+  fieldLabel     String       // UI label: "Origen UTM"
+  fieldType      String       @default("text") // text | number | date | select | boolean
+  required       Boolean      @default(false)
+  options        String?      // JSON array for select: '["A","B"]'
+  showAsColumn   Boolean      @default(false)
+  position       Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, fieldName])
 }
 
 model PasswordResetToken {

@@ -14,7 +14,7 @@ export default async function WebhooksPage() {
         redirect('/login');
     }
 
-    const [webhookConfig, organization] = await Promise.all([
+    const [webhookConfig, organization, customFields] = await Promise.all([
         prisma.systemConfig.findUnique({
             where: {
                 organizationId_key: {
@@ -26,7 +26,11 @@ export default async function WebhooksPage() {
         prisma.organization.findUnique({
             where: { id: session.user.organizationId },
             select: { apiKey: true }
-        })
+        }),
+        prisma.customField.findMany({
+            where: { organizationId: session.user.organizationId },
+            orderBy: { position: 'asc' },
+        }),
     ]);
 
     const currentWebhook = webhookConfig?.value || "";
@@ -137,6 +141,69 @@ export default async function WebhooksPage() {
                         </form>
                     </div>
                 </div>
+
+                {/* Custom Fields Documentation */}
+                {customFields.length > 0 && (
+                    <div className="mt-12 pt-10 border-t border-zinc-100 dark:border-zinc-800">
+                        <header className="mb-6">
+                            <h2 className="text-lg font-medium mb-2">Campos de tu Organización</h2>
+                            <p className="text-zinc-500 text-sm">
+                                Estos campos personalizados han sido configurados para tu organización. Inclúyelos en el body del webhook.
+                            </p>
+                        </header>
+
+                        <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">Clave JSON</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">Etiqueta</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">Tipo</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                    {customFields.map(cf => (
+                                        <tr key={cf.id} className="bg-white dark:bg-black">
+                                            <td className="px-4 py-3 font-mono text-brand">{cf.fieldName}</td>
+                                            <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{cf.fieldLabel}</td>
+                                            <td className="px-4 py-3 text-zinc-500">{cf.fieldType}</td>
+                                            <td className="px-4 py-3">
+                                                {cf.required ? (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+                                                        Requerido
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                                                        Opcional
+                                                    </span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="mt-6">
+                            <p className="text-sm text-zinc-500 mb-3">Ejemplo de petición con tus campos personalizados:</p>
+                            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 overflow-x-auto">
+                                <pre className="text-xs md:text-sm font-mono text-zinc-300 whitespace-pre-wrap">
+{`curl -X POST ${process.env.NEXT_PUBLIC_APP_URL || 'https://tu-dominio.com'}/api/webhooks \\
+  -H "x-api-key: ${apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Juan Pérez",
+    "email": "juan@empresa.com",
+    "phone": "+57 300 123 4567",
+    "company": "Tech Solutions SAS",${customFields.map(cf => `
+    "${cf.fieldName}": ""  ← ${cf.fieldLabel}${cf.required ? ' (requerido)' : ' (opcional)'}`).join(',')}
+  }'`}
+                                </pre>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Structure Reference Section */}
                 <div className="mt-12 pt-10 border-t border-zinc-100 dark:border-zinc-800">

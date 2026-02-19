@@ -1,17 +1,18 @@
 'use client'
 
-import { useState } from 'react';
-import { Lead } from '@prisma/client';
+import { useState, useMemo } from 'react';
+import { Lead, CustomField } from '@prisma/client';
 import { updateLead } from '@/app/actions/leads';
-import { X, User, Mail, Phone, Building2, Briefcase, MapPin, Save, Loader2, MessageSquare } from 'lucide-react';
+import { X, User, Mail, Phone, Building2, Briefcase, MapPin, Save, Loader2, MessageSquare, Settings2 } from 'lucide-react';
 
 interface LeadDetailsDialogProps {
     lead: Lead & { currentScore?: number };
     isOpen: boolean;
     onClose: () => void;
+    customFields?: CustomField[];
 }
 
-export function LeadDetailsDialog({ lead, isOpen, onClose }: LeadDetailsDialogProps) {
+export function LeadDetailsDialog({ lead, isOpen, onClose, customFields = [] }: LeadDetailsDialogProps) {
     const [formData, setFormData] = useState({
         name: lead.name,
         email: lead.email || '',
@@ -24,13 +25,104 @@ export function LeadDetailsDialog({ lead, isOpen, onClose }: LeadDetailsDialogPr
     });
     const [loading, setLoading] = useState(false);
 
+    const parsedRawData = useMemo(() => {
+        try {
+            return JSON.parse(lead.rawData || '{}');
+        } catch {
+            return {};
+        }
+    }, [lead.rawData]);
+
+    const [customValues, setCustomValues] = useState<Record<string, string>>(() => {
+        const initial: Record<string, string> = {};
+        for (const cf of customFields) {
+            const val = parsedRawData[cf.fieldName];
+            initial[cf.fieldName] = val !== undefined && val !== null ? String(val) : '';
+        }
+        return initial;
+    });
+
     if (!isOpen) return null;
 
     const handleSave = async () => {
         setLoading(true);
-        await updateLead(lead.id, formData);
+
+        // Merge custom values back into rawData
+        let updatedRaw = parsedRawData;
+        for (const cf of customFields) {
+            updatedRaw = { ...updatedRaw, [cf.fieldName]: customValues[cf.fieldName] ?? '' };
+        }
+
+        await updateLead(lead.id, {
+            ...formData,
+            rawData: JSON.stringify(updatedRaw),
+        });
         setLoading(false);
         onClose();
+    };
+
+    const formatNumber = (raw: string) => {
+        const digits = raw.replace(/\D/g, '');
+        if (!digits) return '';
+        return parseInt(digits, 10).toLocaleString('de-DE');
+    };
+
+    const renderCustomInput = (cf: CustomField) => {
+        const val = customValues[cf.fieldName] ?? '';
+
+        if (cf.fieldType === 'boolean') {
+            return (
+                <select
+                    value={val}
+                    onChange={e => setCustomValues(prev => ({ ...prev, [cf.fieldName]: e.target.value }))}
+                    className="w-full text-sm p-2 border rounded border-zinc-200 dark:border-zinc-700 bg-transparent focus:border-brand outline-none"
+                >
+                    <option value="">—</option>
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                </select>
+            );
+        }
+
+        if (cf.fieldType === 'select') {
+            let options: string[] = [];
+            try { options = JSON.parse(cf.options || '[]'); } catch { /* ignore */ }
+            return (
+                <select
+                    value={val}
+                    onChange={e => setCustomValues(prev => ({ ...prev, [cf.fieldName]: e.target.value }))}
+                    className="w-full text-sm p-2 border rounded border-zinc-200 dark:border-zinc-700 bg-transparent focus:border-brand outline-none"
+                >
+                    <option value="">— Seleccionar —</option>
+                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+            );
+        }
+
+        if (cf.fieldType === 'number') {
+            return (
+                <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formatNumber(val)}
+                    onChange={e => {
+                        const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '');
+                        setCustomValues(prev => ({ ...prev, [cf.fieldName]: raw }));
+                    }}
+                    placeholder="0"
+                    className="w-full text-sm p-2 border rounded border-zinc-200 dark:border-zinc-700 bg-transparent focus:border-brand outline-none"
+                />
+            );
+        }
+
+        return (
+            <input
+                type={cf.fieldType === 'date' ? 'date' : 'text'}
+                value={val}
+                onChange={e => setCustomValues(prev => ({ ...prev, [cf.fieldName]: e.target.value }))}
+                className="w-full text-sm p-2 border rounded border-zinc-200 dark:border-zinc-700 bg-transparent focus:border-brand outline-none"
+            />
+        );
     };
 
     return (
@@ -186,6 +278,26 @@ export function LeadDetailsDialog({ lead, isOpen, onClose }: LeadDetailsDialogPr
                                 </div>
                             </div>
                         </div>
+
+                        {/* Custom Fields Section */}
+                        {customFields.length > 0 && (
+                            <>
+                                <h3 className="text-lg font-medium border-b border-zinc-100 dark:border-zinc-800 pb-2 pt-2 flex items-center gap-2">
+                                    <Settings2 size={16} className="text-brand" /> Campos Personalizados
+                                </h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {customFields.map(cf => (
+                                        <div key={cf.id}>
+                                            <label className="flex items-center gap-1 text-xs font-medium text-zinc-500 mb-1">
+                                                {cf.fieldLabel}
+                                                {cf.required && <span className="text-red-500 ml-0.5">*</span>}
+                                            </label>
+                                            {renderCustomInput(cf)}
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
 
                         <div className="pt-4 flex justify-end">
                             <button
