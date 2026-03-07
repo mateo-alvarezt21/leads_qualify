@@ -26,6 +26,7 @@ model Organization {
   whatsappInstances WhatsAppInstance[]
   licenseCodes  LicenseCode[]
   customFields  CustomField[]
+  leadStatuses  LeadStatus[]
 }
 
 model LicenseCode {
@@ -135,6 +136,32 @@ model CustomField {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, fieldName])
+}
+
+model LeadStatus {
+  id             String          @id @default(cuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  color          String          @default("#6b7280")
+  isDefault      Boolean         @default(false)
+  position       Int             @default(0)
+  triggers       StatusTrigger[]
+  createdAt      DateTime        @default(now())
+
+  @@unique([organizationId, name])
+}
+
+model StatusTrigger {
+  id             String     @id @default(cuid())
+  statusId       String
+  status         LeadStatus @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  organizationId String
+  type           String     @default("webhook")
+  webhookUrl     String
+  fields         String?    // JSON array of field names to include, null = all fields
+  enabled        Boolean    @default(true)
+  createdAt      DateTime   @default(now())
 }
 
 model PasswordResetToken {

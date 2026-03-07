@@ -2,9 +2,10 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Copy, Globe, Share2, Activity, Workflow, Webhook, Save } from 'lucide-react';
+import { ArrowLeft, Globe, Share2, Activity, Workflow, Webhook, Save } from 'lucide-react';
 import { CopyButton } from '@/components/CopyButton';
 import { updateSettings } from '@/app/actions/settings';
+import { getServerTranslation } from '@/lib/server-lang';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,8 @@ export default async function WebhooksPage() {
     if (!session?.user?.organizationId) {
         redirect('/login');
     }
+
+    const { t } = await getServerTranslation();
 
     const [webhookConfig, organization, customFields] = await Promise.all([
         prisma.systemConfig.findUnique({
@@ -46,27 +49,24 @@ export default async function WebhooksPage() {
         { name: 'Meta / Facebook Ads', id: 'facebook', icon: Globe },
         { name: 'TikTok Ads', id: 'tiktok', icon: Share2 },
         { name: 'Google Ads', id: 'google', icon: Activity },
-        { name: 'Formulario Web', id: 'web', icon: Globe },
+        { name: t.webhooks.formularioWeb, id: 'web', icon: Globe },
     ];
 
-    // Get base URL (assuming localhost or deployed url)
-    // In production we should use process.env.NEXT_PUBLIC_APP_URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     return (
         <main className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 p-8">
             <div className="max-w-4xl mx-auto">
                 <Link href="/" className="inline-flex items-center gap-2 text-zinc-500 hover:text-brand mb-8 transition-colors">
-                    <ArrowLeft size={18} /> Volver al Inicio
+                    <ArrowLeft size={18} /> {t.nav.backToHome}
                 </Link>
 
                 <header className="mb-10">
                     <h1 className="text-3xl font-light mb-4 flex items-center gap-3">
-                        Integración de <span className="text-brand font-semibold">Webhooks</span>
+                        {t.webhooks.title} <span className="text-brand font-semibold">{t.webhooks.titleHighlight}</span>
                     </h1>
                     <p className="text-zinc-500">
-                        Conecta tus fuentes de leads externas enviando peticiones POST a las siguientes URLs.
-                        El sistema calificará automáticamente cada lead entrante.
+                        {t.webhooks.subtitle}
                     </p>
                 </header>
 
@@ -91,7 +91,7 @@ export default async function WebhooksPage() {
                                 </div>
 
                                 <div className="mt-4 text-xs text-zinc-500">
-                                    <p className="mb-1"><span className="font-semibold">Método:</span> POST</p>
+                                    <p className="mb-1"><span className="font-semibold">{t.webhooks.method}:</span> POST</p>
                                     <p><span className="font-semibold">Body (JSON):</span> {`{ "name": "...", "email": "...", "phone": "..." }`}</p>
                                 </div>
                             </div>
@@ -102,10 +102,10 @@ export default async function WebhooksPage() {
                 <div className="mt-12 pt-10 border-t border-zinc-100 dark:border-zinc-800">
                     <header className="mb-6">
                         <h2 className="text-2xl font-light mb-2 flex items-center gap-3">
-                            Webhook de <span className="text-brand font-semibold">Salida</span>
+                            {t.webhooks.outgoingTitle} <span className="text-brand font-semibold">{t.webhooks.outgoingTitleHighlight}</span>
                         </h2>
                         <p className="text-zinc-500">
-                            Envía los datos procesados de vuelta a n8n, Zapier, o tu CRM.
+                            {t.webhooks.outgoingDesc}
                         </p>
                     </header>
 
@@ -115,10 +115,10 @@ export default async function WebhooksPage() {
                         <form action={action}>
                             <div className="mb-6">
                                 <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                                    <Webhook size={18} /> URL de Destino (POST)
+                                    <Webhook size={18} /> {t.webhooks.destinationUrl}
                                 </label>
                                 <p className="text-xs text-zinc-500 mb-2">
-                                    El sistema enviará el JSON del lead a esta dirección inmediatamente después de calificarlo.
+                                    {t.webhooks.destinationUrlDesc}
                                 </p>
                                 <input
                                     type="url"
@@ -135,7 +135,7 @@ export default async function WebhooksPage() {
                                     className="flex items-center gap-2 bg-brand text-white px-6 py-2 rounded shadow hover:bg-amber-600 transition-colors font-medium text-sm"
                                 >
                                     <Save size={16} />
-                                    Guardar Configuración
+                                    {t.webhooks.save}
                                 </button>
                             </div>
                         </form>
@@ -146,9 +146,9 @@ export default async function WebhooksPage() {
                 {customFields.length > 0 && (
                     <div className="mt-12 pt-10 border-t border-zinc-100 dark:border-zinc-800">
                         <header className="mb-6">
-                            <h2 className="text-lg font-medium mb-2">Campos de tu Organización</h2>
+                            <h2 className="text-lg font-medium mb-2">{t.webhooks.orgFields}</h2>
                             <p className="text-zinc-500 text-sm">
-                                Estos campos personalizados han sido configurados para tu organización. Inclúyelos en el body del webhook.
+                                {t.webhooks.orgFieldsDesc}
                             </p>
                         </header>
 
@@ -156,10 +156,10 @@ export default async function WebhooksPage() {
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">Clave JSON</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">Etiqueta</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">Tipo</th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">Estado</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">{t.webhooks.jsonKey}</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">{t.webhooks.label}</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">{t.webhooks.type}</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">{t.webhooks.fieldStatus}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -171,11 +171,11 @@ export default async function WebhooksPage() {
                                             <td className="px-4 py-3">
                                                 {cf.required ? (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
-                                                        Requerido
+                                                        {t.webhooks.required}
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
-                                                        Opcional
+                                                        {t.webhooks.optional}
                                                     </span>
                                                 )}
                                             </td>
@@ -186,7 +186,7 @@ export default async function WebhooksPage() {
                         </div>
 
                         <div className="mt-6">
-                            <p className="text-sm text-zinc-500 mb-3">Ejemplo de petición con tus campos personalizados:</p>
+                            <p className="text-sm text-zinc-500 mb-3">{t.webhooks.exampleRequest}</p>
                             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 overflow-x-auto">
                                 <pre className="text-xs md:text-sm font-mono text-zinc-300 whitespace-pre-wrap">
 {`curl -X POST ${process.env.NEXT_PUBLIC_APP_URL || 'https://tu-dominio.com'}/api/webhooks \\
@@ -197,7 +197,7 @@ export default async function WebhooksPage() {
     "email": "juan@empresa.com",
     "phone": "+57 300 123 4567",
     "company": "Tech Solutions SAS",${customFields.map(cf => `
-    "${cf.fieldName}": ""  ← ${cf.fieldLabel}${cf.required ? ' (requerido)' : ' (opcional)'}`).join(',')}
+    "${cf.fieldName}": ""  ← ${cf.fieldLabel}${cf.required ? ` (${t.webhooks.required.toLowerCase()})` : ` (${t.webhooks.optional.toLowerCase()})`}`).join(',')}
   }'`}
                                 </pre>
                             </div>
@@ -208,9 +208,9 @@ export default async function WebhooksPage() {
                 {/* Structure Reference Section */}
                 <div className="mt-12 pt-10 border-t border-zinc-100 dark:border-zinc-800">
                     <header className="mb-6">
-                        <h2 className="text-lg font-medium mb-2">Estructura del Payload (JSON)</h2>
+                        <h2 className="text-lg font-medium mb-2">{t.webhooks.payloadTitle}</h2>
                         <p className="text-zinc-500 text-sm">
-                            Este es el formato de los datos que recibirás en tu webhook. Úsalo para mapear los campos en tu plataforma de destino.
+                            {t.webhooks.payloadDesc}
                         </p>
                     </header>
 

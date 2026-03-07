@@ -1,18 +1,22 @@
 import { getAnalyticsData } from '@/lib/analytics';
 import { ConversionByScoreChart, StatusDistributionChart, SourceChart, GrowthChart } from './Charts';
 import { BarChart3, TrendingUp, PieChart, Target } from 'lucide-react';
+import { getServerTranslation } from '@/lib/server-lang';
 
 export async function AnalyticsDashboard({ organizationId }: { organizationId: string }) {
-    const data = await getAnalyticsData(organizationId);
+    const [data, { t }] = await Promise.all([
+        getAnalyticsData(organizationId),
+        getServerTranslation(),
+    ]);
 
     return (
         <section className="mt-12 space-y-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-light text-zinc-900 dark:text-zinc-100">
-                        Análisis de <span className="font-semibold text-brand">Rendimiento</span>
+                        {t.analytics.title} <span className="font-semibold text-brand">{t.analytics.titleHighlight}</span>
                     </h2>
-                    <p className="text-sm text-zinc-500">Métricas clave sobre la calidad y conversión de tus leads.</p>
+                    <p className="text-sm text-zinc-500">{t.analytics.subtitle}</p>
                 </div>
             </div>
 
@@ -25,8 +29,8 @@ export async function AnalyticsDashboard({ organizationId }: { organizationId: s
                             <Target size={20} />
                         </div>
                         <div>
-                            <h3 className="font-medium text-zinc-900 dark:text-zinc-100">Conversión por Calidad</h3>
-                            <p className="text-xs text-zinc-500">Tasa de éxito según el puntaje inicial</p>
+                            <h3 className="font-medium text-zinc-900 dark:text-zinc-100">{t.analytics.conversionTitle}</h3>
+                            <p className="text-xs text-zinc-500">{t.analytics.conversionDesc}</p>
                         </div>
                     </div>
                     <ConversionByScoreChart data={data.conversionByScore} />
@@ -39,8 +43,8 @@ export async function AnalyticsDashboard({ organizationId }: { organizationId: s
                             <TrendingUp size={20} />
                         </div>
                         <div>
-                            <h3 className="font-medium text-zinc-900 dark:text-zinc-100">Leads Recientes</h3>
-                            <p className="text-xs text-zinc-500">Tendencia de adquisición (7 días)</p>
+                            <h3 className="font-medium text-zinc-900 dark:text-zinc-100">{t.analytics.growthTitle}</h3>
+                            <p className="text-xs text-zinc-500">{t.analytics.growthDesc}</p>
                         </div>
                     </div>
                     <GrowthChart data={data.growth} />
@@ -53,8 +57,8 @@ export async function AnalyticsDashboard({ organizationId }: { organizationId: s
                             <PieChart size={20} />
                         </div>
                         <div>
-                            <h3 className="font-medium text-zinc-900 dark:text-zinc-100">Estado del Pipeline</h3>
-                            <p className="text-xs text-zinc-500">Distribución actual de leads</p>
+                            <h3 className="font-medium text-zinc-900 dark:text-zinc-100">{t.analytics.statusTitle}</h3>
+                            <p className="text-xs text-zinc-500">{t.analytics.statusDesc}</p>
                         </div>
                     </div>
                     <StatusDistributionChart data={data.statusDistribution} />
@@ -67,8 +71,8 @@ export async function AnalyticsDashboard({ organizationId }: { organizationId: s
                             <BarChart3 size={20} />
                         </div>
                         <div>
-                            <h3 className="font-medium text-zinc-900 dark:text-zinc-100">Mejores Fuentes</h3>
-                            <p className="text-xs text-zinc-500">Volumen por canal de origen</p>
+                            <h3 className="font-medium text-zinc-900 dark:text-zinc-100">{t.analytics.sourcesTitle}</h3>
+                            <p className="text-xs text-zinc-500">{t.analytics.sourcesDesc}</p>
                         </div>
                     </div>
                     <SourceChart data={data.sourceDistribution} />

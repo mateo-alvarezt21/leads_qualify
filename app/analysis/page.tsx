@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { generateAnalysis } from '@/app/actions/analysis';
 import Link from 'next/link';
 import { ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
-
+import { useLanguage } from '@/lib/i18n';
 
 export default function AnalysisPage() {
+    const { t } = useLanguage();
     const [report, setReport] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -20,17 +21,16 @@ export default function AnalysisPage() {
         <main className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 p-8">
             <div className="max-w-4xl mx-auto">
                 <Link href="/" className="inline-flex items-center gap-2 text-zinc-500 hover:text-brand mb-8 transition-colors">
-                    <ArrowLeft size={18} /> Volver al Inicio
+                    <ArrowLeft size={18} /> {t.nav.backToHome}
                 </Link>
 
                 <header className="mb-10">
                     <h1 className="text-3xl font-light mb-4 flex items-center gap-3">
-                        Análisis de <span className="text-brand font-semibold">Rendimiento</span>
+                        {t.analysis.title} <span className="text-brand font-semibold">{t.analysis.titleHighlight}</span>
                         <Sparkles className="text-brand" size={24} />
                     </h1>
                     <p className="text-zinc-500">
-                        Utiliza la IA para analizar la correlación entre la calificación inicial y el resultado real de ventas.
-                        Obtén sugerencias para refinar tu prompt y mejorar la calidad de los leads.
+                        {t.analysis.subtitle}
                     </p>
                 </header>
 
@@ -39,9 +39,9 @@ export default function AnalysisPage() {
                         <div className="mb-6 mx-auto w-16 h-16 bg-brand/10 rounded-full flex items-center justify-center text-brand">
                             <Sparkles size={32} />
                         </div>
-                        <h3 className="text-lg font-medium mb-2">Generar Nuevo Análisis</h3>
+                        <h3 className="text-lg font-medium mb-2">{t.analysis.generateTitle}</h3>
                         <p className="text-zinc-500 mb-6 max-w-md mx-auto">
-                            Analizaremos tu base de datos de leads históricos para encontrar patrones de éxito y fracaso.
+                            {t.analysis.generateDesc}
                         </p>
                         <button
                             onClick={handleGenerate}
@@ -49,7 +49,7 @@ export default function AnalysisPage() {
                             className="bg-brand text-white px-8 py-3 rounded shadow-lg hover:bg-amber-600 transition-all font-medium inline-flex items-center gap-2"
                         >
                             {loading && <Loader2 className="animate-spin" size={20} />}
-                            {loading ? 'Analizando Datos...' : 'Comenzar Análisis IA'}
+                            {loading ? t.analysis.analyzing : t.analysis.startButton}
                         </button>
                     </div>
                 )}
@@ -59,7 +59,7 @@ export default function AnalysisPage() {
                         <div className="bg-white dark:bg-zinc-900 border border-brand/30 rounded-lg p-8 shadow-xl relative">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand to-yellow-300"></div>
                             <h3 className="text-xl font-bold text-brand mb-6 flex items-center gap-2">
-                                <Sparkles size={20} /> Resultados del Análisis
+                                <Sparkles size={20} /> {t.analysis.resultsTitle}
                             </h3>
                             <div className="prose dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">
                                 {report}
@@ -71,7 +71,7 @@ export default function AnalysisPage() {
                                     disabled={loading}
                                     className="text-sm text-zinc-500 hover:text-brand underline"
                                 >
-                                    {loading ? 'Regenerando...' : 'Regenerar Análisis'}
+                                    {loading ? t.analysis.regenerating : t.analysis.regenerate}
                                 </button>
                             </div>
                         </div>

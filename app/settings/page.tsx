@@ -3,12 +3,16 @@ import { updateSettings } from '@/app/actions/settings';
 import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Users, LogOut } from 'lucide-react';
+import { ArrowLeft, Save, Users } from 'lucide-react';
 import { WhatsAppSettings } from '@/components/WhatsAppSettings';
 import { BrandingSettings } from '@/components/BrandingSettings';
 import { CustomFieldsSettings } from '@/components/CustomFieldsSettings';
 import { LogoutButton } from '@/components/LogoutButton';
 import { DEFAULT_SCORING_PROMPT } from '@/lib/constants';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { getServerTranslation } from '@/lib/server-lang';
+import { LeadStatusSettings } from '@/components/LeadStatusSettings';
+import { getLeadStatuses } from '@/app/actions/leadStatuses';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,9 +22,10 @@ export default async function SettingsPage() {
         redirect('/login');
     }
 
+    const { t } = await getServerTranslation();
     const orgId = session.user.organizationId;
 
-    const [promptConfig, welcomeConfig, waScoringConfig, bufferTimeoutConfig, organization, customFields] = await Promise.all([
+    const [promptConfig, welcomeConfig, waScoringConfig, bufferTimeoutConfig, organization, customFields, leadStatuses] = await Promise.all([
         prisma.systemConfig.findUnique({
             where: { organizationId_key: { organizationId: orgId, key: 'scoring_prompt' } }
         }),
@@ -41,6 +46,7 @@ export default async function SettingsPage() {
             where: { organizationId: orgId },
             orderBy: { position: 'asc' },
         }),
+        getLeadStatuses(orgId),
     ]);
 
     const currentPrompt = promptConfig?.value || DEFAULT_SCORING_PROMPT;
@@ -58,12 +64,12 @@ export default async function SettingsPage() {
             <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <Link href="/" className="inline-flex items-center gap-2 text-zinc-500 hover:text-brand transition-colors">
-                        <ArrowLeft size={18} /> Volver al Inicio
+                        <ArrowLeft size={18} /> {t.nav.backToHome}
                     </Link>
                     <LogoutButton />
                 </div>
 
-                <h1 className="text-3xl font-light mb-8">Configuración de <span className="text-brand font-semibold">Calificación</span></h1>
+                <h1 className="text-3xl font-light mb-8">{t.settings.title} <span className="text-brand font-semibold">{t.settings.titleHighlight}</span></h1>
 
                 <div className="space-y-8">
                     {/* Main Config Form */}
@@ -74,9 +80,9 @@ export default async function SettingsPage() {
 
                             {/* Prompt Section */}
                             <div>
-                                <h2 className="text-xl font-medium mb-4">Prompt del Sistema</h2>
+                                <h2 className="text-xl font-medium mb-4">{t.settings.systemPrompt}</h2>
                                 <p className="text-zinc-500 mb-4 text-sm">
-                                    Define aquí las instrucciones que la Inteligencia Artificial debe seguir para puntuar a cada lead entrante.
+                                    {t.settings.systemPromptDesc}
                                 </p>
                                 <textarea
                                     name="prompt"
@@ -87,10 +93,9 @@ export default async function SettingsPage() {
 
                             {/* WhatsApp Scoring Prompt */}
                             <div>
-                                <h2 className="text-xl font-medium mb-4">Prompt de Calificacion WhatsApp</h2>
+                                <h2 className="text-xl font-medium mb-4">{t.settings.whatsappScoringPrompt}</h2>
                                 <p className="text-zinc-500 mb-2 text-sm">
-                                    Instrucciones especificas para calificar leads que llegan por WhatsApp. La IA recibira la conversacion completa del contacto.
-                                    Si se deja vacio, se usa el Prompt del Sistema general.
+                                    {t.settings.whatsappScoringPromptDesc}
                                 </p>
                                 <textarea
                                     name="whatsapp_scoring_prompt"
@@ -102,11 +107,9 @@ export default async function SettingsPage() {
 
                             {/* WhatsApp Buffer Timeout */}
                             <div>
-                                <h2 className="text-xl font-medium mb-4">Tiempo de Espera WhatsApp</h2>
+                                <h2 className="text-xl font-medium mb-4">{t.settings.whatsappBufferTimeout}</h2>
                                 <p className="text-zinc-500 mb-2 text-sm">
-                                    Minutos de silencio que el sistema espera antes de calificar la conversacion.
-                                    Despues del mensaje de bienvenida, el sistema acumula todos los mensajes del contacto
-                                    y los envia a la IA una vez transcurrido este tiempo sin mensajes nuevos.
+                                    {t.settings.whatsappBufferTimeoutDesc}
                                 </p>
                                 <div className="flex items-center gap-3">
                                     <input
@@ -118,17 +121,17 @@ export default async function SettingsPage() {
                                         className="w-32 p-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-black text-sm outline-none focus:border-brand transition-colors"
                                         defaultValue={currentBufferTimeout}
                                     />
-                                    <span className="text-zinc-500 text-sm">minutos</span>
+                                    <span className="text-zinc-500 text-sm">{t.settings.minutes}</span>
                                 </div>
                             </div>
 
                             {/* WhatsApp Welcome Message */}
                             <div>
-                                <h2 className="text-xl font-medium mb-4">Mensaje de Bienvenida WhatsApp</h2>
+                                <h2 className="text-xl font-medium mb-4">{t.settings.whatsappWelcome}</h2>
                                 <p className="text-zinc-500 mb-2 text-sm">
-                                    Mensaje que se envia automaticamente cuando un nuevo contacto escribe por primera vez.
-                                    Usa <code className="bg-zinc-200 dark:bg-zinc-700 px-1 rounded text-xs">{'{nombre}'}</code> para incluir el nombre del contacto.
-                                    Dejalo vacio para desactivar la respuesta automatica.
+                                    {t.settings.whatsappWelcomeDesc1}
+                                    <code className="bg-zinc-200 dark:bg-zinc-700 px-1 rounded text-xs">{t.settings.whatsappWelcomeVar}</code>
+                                    {t.settings.whatsappWelcomeDesc2}
                                 </p>
                                 <textarea
                                     name="whatsapp_welcome_message"
@@ -144,10 +147,18 @@ export default async function SettingsPage() {
                                     className="flex items-center gap-2 bg-brand text-white px-6 py-2.5 rounded shadow hover:bg-amber-600 transition-colors font-medium"
                                 >
                                     <Save size={18} />
-                                    Guardar Configuracion
+                                    {t.settings.save}
                                 </button>
                             </div>
                         </form>
+                    </div>
+
+                    {/* Language */}
+                    <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 md:p-8 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-brand"></div>
+                        <h2 className="text-xl font-medium mb-2">{t.settings.language}</h2>
+                        <p className="text-zinc-500 mb-4 text-sm">{t.settings.languageDescription}</p>
+                        <LanguageToggle />
                     </div>
 
                     {/* WhatsApp Integration */}
@@ -161,6 +172,9 @@ export default async function SettingsPage() {
                             orgName={organization?.name ?? 'Mi Organización'}
                         />
                     )}
+
+                    {/* Lead Statuses */}
+                    <LeadStatusSettings initialStatuses={leadStatuses} />
 
                     {/* Custom Fields - Admin only */}
                     {(session.user.role === 'admin' || session.user.role === 'superadmin') && (
@@ -176,10 +190,10 @@ export default async function SettingsPage() {
                         <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full group-hover:bg-brand/10 group-hover:text-brand transition-colors">
                             <Users size={20} />
                         </div>
-                        <h3 className="font-semibold text-lg">Gestión de Usuarios</h3>
+                        <h3 className="font-semibold text-lg">{t.settings.userManagement}</h3>
                     </div>
                     <p className="text-zinc-500 text-sm">
-                        Administra cuentas de acceso, crea nuevos usuarios y restablece contraseñas.
+                        {t.settings.userManagementDesc}
                     </p>
                 </Link>
             </div>

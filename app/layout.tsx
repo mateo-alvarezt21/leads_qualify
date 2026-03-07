@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BrandingStyle } from "@/components/BrandingStyle";
+import { LanguageProvider } from "@/lib/i18n";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -77,13 +78,15 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <BrandingStyle />
-        {children}
+        <LanguageProvider>
+          {children}
 
-        <footer className="mt-12 py-8 text-center border-t border-zinc-100 dark:border-zinc-900">
-          <p className="text-xs text-zinc-400 font-medium">
-            Creado con <span className="text-red-500">❤</span> en Medellín, Colombia
-          </p>
-        </footer>
+          <footer className="mt-12 py-8 text-center border-t border-zinc-100 dark:border-zinc-900">
+            <p className="text-xs text-zinc-400 font-medium">
+              Creado con <span className="text-red-500">❤</span> en Medellín, Colombia
+            </p>
+          </footer>
+        </LanguageProvider>
       </body>
     </html>
   );
