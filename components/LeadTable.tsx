@@ -256,26 +256,26 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
             {/* Table container */}
             <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto min-h-[400px]">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b border-slate-100 dark:border-border-dark">
-                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.table.prospect}</th>
-                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">{t.table.initialTemp}</th>
-                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">{t.table.currentTemp}</th>
-                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.table.source}</th>
-                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.table.line}</th>
-                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.table.date}</th>
+                                <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider min-w-[200px]">{t.table.prospect}</th>
+                                <th className="px-3 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center whitespace-nowrap">{t.table.initialTemp}</th>
+                                <th className="px-3 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center whitespace-nowrap">{t.table.currentTemp}</th>
+                                <th className="px-3 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">{t.table.source}</th>
+                                <th className="px-3 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">{t.table.line}</th>
+                                <th className="px-3 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">{t.table.date}</th>
                                 {columnFields.map(cf => (
-                                    <th key={cf.id} className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">{cf.fieldLabel}</th>
+                                    <th key={cf.id} className="px-3 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">{cf.fieldLabel}</th>
                                 ))}
-                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">{t.table.status}</th>
-                                <th className="px-8 py-5 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right w-12"></th>
+                                <th className="px-3 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right whitespace-nowrap">{t.table.status}</th>
+                                <th className="px-3 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right w-10"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-border-dark">
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8 + columnFields.length} className="px-8 py-16 text-center text-slate-400">
+                                    <td colSpan={8 + columnFields.length} className="px-4 py-16 text-center text-slate-400">
                                         <div className="flex flex-col items-center gap-2">
                                             <AlertCircle size={32} className="text-slate-300 dark:text-slate-600" />
                                             {t.table.noLeads}
@@ -289,61 +289,68 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
                                     return (
                                         <tr
                                             key={lead.id}
-                                            className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group cursor-pointer"
+                                            role="button"
+                                            tabIndex={0}
+                                            aria-label={`Ver detalles de ${lead.name}`}
+                                            className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
                                             onClick={() => setSelectedLead(lead)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedLead(lead); } }}
                                         >
-                                            <td className="px-8 py-5">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-medium text-slate-600 dark:text-slate-300 shrink-0">
+                                            <td className="px-4 py-3 min-w-[200px] max-w-[280px]">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-medium text-xs text-slate-600 dark:text-slate-300 shrink-0">
                                                         {getInitials(lead.name)}
                                                     </div>
-                                                    <div>
-                                                        <div className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors flex items-center gap-1.5">
-                                                            {lead.name}
-                                                            <ChevronRight size={14} className="opacity-0 group-hover:opacity-60 transition-opacity text-slate-400" />
+                                                    <div className="min-w-0">
+                                                        <div className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors flex items-center gap-1 truncate">
+                                                            <span className="truncate">{lead.name}</span>
+                                                            <ChevronRight size={13} className="opacity-0 group-hover:opacity-60 transition-opacity text-slate-400 shrink-0" />
                                                         </div>
-                                                        <div className="text-xs text-slate-500">
+                                                        <div className="text-xs text-slate-500 truncate">
                                                             {lead.company && <span>{lead.company} · </span>}
                                                             {lead.email}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-5">
+                                            <td className="px-3 py-3">
                                                 <div className="flex justify-center">
-                                                    <div className="relative w-14 h-14">
+                                                    <div className="relative w-10 h-10">
                                                         <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                                                             <circle className="stroke-slate-200 dark:stroke-slate-800" cx="18" cy="18" fill="none" r="16" strokeWidth="3.5"></circle>
                                                             <circle className={getScoreStrokeColor(lead.initialScore)} cx="18" cy="18" fill="none" r="16" strokeDasharray={`${lead.initialScore}, 100`} strokeLinecap="round" strokeWidth="3.5"></circle>
                                                         </svg>
-                                                        <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${getScoreTextColor(lead.initialScore)}`}>{lead.initialScore}%</span>
+                                                        <span className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold ${getScoreTextColor(lead.initialScore)}`}>{lead.initialScore}%</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-5">
+                                            <td className="px-3 py-3">
                                                 <div className="flex justify-center">
-                                                    <div className="relative w-14 h-14">
+                                                    <div className="relative w-10 h-10">
                                                         <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                                                             <circle className="stroke-slate-200 dark:stroke-slate-800" cx="18" cy="18" fill="none" r="16" strokeWidth="3.5"></circle>
                                                             <circle className={getScoreStrokeColor(lead.currentScore)} cx="18" cy="18" fill="none" r="16" strokeDasharray={`${lead.currentScore}, 100`} strokeLinecap="round" strokeWidth="3.5"></circle>
                                                         </svg>
-                                                        <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${getScoreTextColor(lead.currentScore)}`}>{lead.currentScore}%</span>
+                                                        <span className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold ${getScoreTextColor(lead.currentScore)}`}>{lead.currentScore}%</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-5">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                                                    {lead.source}
+                                            <td className="px-3 py-3 max-w-[140px]">
+                                                <span
+                                                    className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 max-w-full min-w-0"
+                                                    title={lead.source}
+                                                >
+                                                    <span className="truncate">{lead.source}</span>
                                                 </span>
                                             </td>
-                                            <td className="px-8 py-5">
+                                            <td className="px-3 py-3 max-w-[120px]">
                                                 {lead.whatsappInstance ? (
-                                                    <span className="text-sm text-accent font-medium">{lead.whatsappInstance.name}</span>
+                                                    <span className="text-xs text-accent font-medium truncate block" title={lead.whatsappInstance.name}>{lead.whatsappInstance.name}</span>
                                                 ) : (
-                                                    <span className="text-sm text-slate-500">—</span>
+                                                    <span className="text-xs text-slate-500">—</span>
                                                 )}
                                             </td>
-                                            <td className="px-8 py-5 text-slate-500 whitespace-nowrap text-sm" suppressHydrationWarning>
+                                            <td className="px-3 py-3 text-slate-500 whitespace-nowrap text-xs" suppressHydrationWarning>
                                                 {new Date(lead.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                             </td>
                                             {columnFields.map(cf => {
@@ -356,27 +363,27 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
                                                     display = raw === true || raw === 'true' ? t.leadDetails.yes : raw === false || raw === 'false' ? t.leadDetails.no : '—';
                                                 }
                                                 return (
-                                                    <td key={cf.id} className="px-8 py-5 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                                                        {display}
+                                                    <td key={cf.id} className="px-3 py-3 max-w-[160px]" title={display !== '—' ? display : undefined}>
+                                                        <span className="block text-xs text-slate-600 dark:text-slate-400 truncate">{display}</span>
                                                     </td>
                                                 );
                                             })}
-                                            <td className="px-8 py-5 text-right">
+                                            <td className="px-3 py-3 text-right">
                                                 <span
-                                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border"
+                                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border whitespace-nowrap"
                                                     style={getStatusStyle(lead.status)}
                                                 >
                                                     {lead.status}
                                                 </span>
                                             </td>
-                                            <td className="px-8 py-5 text-center">
+                                            <td className="px-3 py-3 text-center">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleDelete(lead.id); }}
                                                     disabled={isPending}
                                                     className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
                                                     title={t.table.deleteLead}
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Trash2 size={15} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -388,14 +395,14 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
                 </div>
 
                 {/* Pagination inside table card */}
-                <div className="px-8 py-4 border-t border-slate-100 dark:border-border-dark flex items-center justify-between text-sm text-slate-500">
+                <div className="px-4 py-4 border-t border-slate-100 dark:border-border-dark flex items-center justify-between text-sm text-slate-500">
                     <span>{t.table.showing} {initialLeads.length} {t.table.of} {totalCount} {t.table.leads}</span>
                     <div className="flex gap-2">
                         <button
                             onClick={() => {
                                 const params = new URLSearchParams(window.location.search);
                                 params.set('page', (currentPage - 1).toString());
-                                window.location.search = params.toString();
+                                router.push(`?${params.toString()}`);
                             }}
                             disabled={currentPage <= 1}
                             className="px-3 py-1.5 border border-slate-200 dark:border-border-dark rounded-md hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
@@ -412,7 +419,7 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
                                     onClick={() => {
                                         const params = new URLSearchParams(window.location.search);
                                         params.set('page', page.toString());
-                                        window.location.search = params.toString();
+                                        router.push(`?${params.toString()}`);
                                     }}
                                     className={`px-3 py-1.5 border border-slate-200 dark:border-border-dark rounded-md transition-colors ${
                                         page === currentPage
@@ -428,7 +435,7 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
                             onClick={() => {
                                 const params = new URLSearchParams(window.location.search);
                                 params.set('page', (currentPage + 1).toString());
-                                window.location.search = params.toString();
+                                router.push(`?${params.toString()}`);
                             }}
                             disabled={currentPage >= totalPages}
                             className="px-3 py-1.5 border border-slate-200 dark:border-border-dark rounded-md hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
