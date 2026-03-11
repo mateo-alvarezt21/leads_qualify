@@ -306,9 +306,14 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
                                                             <span className="truncate">{lead.name}</span>
                                                             <ChevronRight size={13} className="opacity-0 group-hover:opacity-60 transition-opacity text-slate-400 shrink-0" />
                                                         </div>
-                                                        <div className="text-xs text-slate-500 truncate">
+                                                        <div className="text-xs text-slate-500 truncate flex items-center gap-1">
                                                             {lead.company && <span>{lead.company} · </span>}
-                                                            {lead.email}
+                                                            <span className="truncate">{lead.email}</span>
+                                                            {lead.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email) && (
+                                                                <span title="Email con formato inválido" className="shrink-0 text-amber-500">
+                                                                    <AlertCircle size={11} />
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>

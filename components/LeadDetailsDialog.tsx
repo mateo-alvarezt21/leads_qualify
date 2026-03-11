@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Lead, CustomField } from '@prisma/client';
 import { updateLead } from '@/app/actions/leads';
-import { X, User, Mail, Phone, Building2, Briefcase, MapPin, Save, Loader2, MessageSquare, Settings2 } from 'lucide-react';
+import { X, User, Mail, Phone, Building2, Briefcase, MapPin, Save, Loader2, MessageSquare, Settings2, AlertCircle } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { LeadStatus } from '@prisma/client';
 
@@ -249,6 +249,11 @@ export function LeadDetailsDialog({ lead, isOpen, onClose, customFields = [], le
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 />
+                                {formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
+                                    <p className="flex items-center gap-1 text-xs text-amber-500 mt-1">
+                                        <AlertCircle size={11} /> Email con formato inválido
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="flex items-center gap-1 text-xs font-medium text-zinc-500 mb-1"><Phone size={12} /> {t.leadDetails.phone}</label>

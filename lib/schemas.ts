@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const LeadSchema = z.object({
     source: z.string().min(1, "Source is required").optional(), // Optional in body as it can be in query param
     name: z.string().min(1, "Name is required"),
-    email: z.string().email("Invalid email format").optional().or(z.literal('')),
+    email: z.string().optional().or(z.literal('')),
     phone: z.string().optional().or(z.literal('')),
     company: z.string().optional().or(z.literal('')),
     role: z.string().optional().or(z.literal('')),
