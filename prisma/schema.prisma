@@ -24,6 +24,7 @@ model Organization {
   leads         Lead[]
   settings      SystemConfig[]
   whatsappInstances WhatsAppInstance[]
+  whatsappCloudAccounts WhatsAppCloudAccount[]
   licenseCodes  LicenseCode[]
   customFields  CustomField[]
   leadStatuses  LeadStatus[]
@@ -70,6 +71,27 @@ model WhatsAppSession {
   @@unique([instanceId, key])
 }
 
+model WhatsAppCloudAccount {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  displayName    String       // Etiqueta: "Ventas Cloud", "Soporte"
+  phoneNumberId  String       // Phone Number ID de Meta (va en la URL de envío)
+  accessToken    String       // System User Token permanente
+  wabaId         String       // WhatsApp Business Account ID
+  appSecret      String       // App Secret para validar firmas de webhook
+  verifyToken    String       // String definido por el usuario para verificar webhook
+  apiVersion     String       @default("v21.0")
+  phone          String?      // Número legible (se guarda del primer webhook recibido)
+  active         Boolean      @default(true)
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  leads          Lead[]
+}
+
 model User {
   id             Int      @id @default(autoincrement())
   email          String   @unique
@@ -92,6 +114,9 @@ model Lead {
 
   whatsappInstanceId String?
   whatsappInstance   WhatsAppInstance? @relation(fields: [whatsappInstanceId], references: [id], onDelete: SetNull)
+
+  whatsappCloudAccountId String?
+  whatsappCloudAccount   WhatsAppCloudAccount? @relation(fields: [whatsappCloudAccountId], references: [id], onDelete: SetNull)
 
   source       String
   name         String

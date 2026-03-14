@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>LeadQuality — Diagrama BD</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#080b12; overflow:hidden; height:100vh; user-select:none; }
+    svg { width:100vw; height:100vh; }
+
+    #toolbar {
+      position:fixed; top:20px; left:50%; transform:translateX(-50%);
+      display:flex; align-items:center; gap:14px;
+      background:rgba(13,18,32,0.92); backdrop-filter:blur(10px);
+      padding:10px 24px; border-radius:12px; border:1px solid #1e2d4a;
+      z-index:100; font-family:'Segoe UI',system-ui,sans-serif;
+    }
+    #toolbar h1 { font-size:14px; font-weight:700; color:#94a3b8; letter-spacing:1px; }
+    #toolbar button {
+      background:#1e293b; border:1px solid #334155; color:#94a3b8;
+      padding:5px 14px; border-radius:6px; font-size:12px; cursor:pointer;
+      font-family:inherit; transition:all .15s;
+    }
+    #toolbar button:hover { background:#273344; color:#e2e8f0; border-color:#4f6180; }
+
+    #legend {
+      position:fixed; bottom:20px; left:20px;
+      background:rgba(13,18,32,0.92); padding:14px 18px; border-radius:10px;
+      border:1px solid #1e2d4a; font-family:'Segoe UI',system-ui,sans-serif;
+      z-index:100; font-size:11px; color:#64748b; line-height:2;
+    }
+    #legend strong { color:#94a3b8; font-size:12px; display:block; margin-bottom:2px; }
+    .li { display:flex; align-items:center; gap:8px; }
+    .dot { width:24px; height:3px; border-radius:2px; flex-shrink:0; }
+    .dot.dashed { background:repeating-linear-gradient(90deg,#f59e0b 0,#f59e0b 5px,transparent 5px,transparent 8px); }
+    .sq { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+
+    #hint {
+      position:fixed; bottom:20px; right:20px; font-size:11px; color:#475569;
+      background:rgba(13,18,32,0.92); padding:8px 16px; border-radius:8px;
+      border:1px solid #1e2d4a; font-family:'Segoe UI',system-ui,sans-serif; z-index:100;
+    }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <h1>LeadQuality — Base de Datos</h1>
+  <button onclick="resetView()">Restablecer vista</button>
+</div>
+
+<div id="legend">
+  <strong>Leyenda</strong>
+  <div class="li"><div class="dot" style="background:#6366f1"></div> Relacion 1:N</div>
+  <div class="li"><div class="dot" style="background:#22c55e"></div> Relacion WhatsApp (Baileys)</div>
+  <div class="li"><div class="dot" style="background:#06b6d4"></div> Relacion WhatsApp Cloud</div>
+  <div class="li"><div class="dot dashed"></div> Relacion opcional</div>
+  <div class="li"><div class="sq" style="background:#fbbf24"></div> Primary Key</div>
+  <div class="li"><div class="sq" style="background:#60a5fa"></div> Foreign Key</div>
+</div>
+
+<div id="hint">Arrastra tablas individualmente · Scroll = zoom · Drag fondo = mover</div>
+
+<svg id="svg">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0L0 0 0 40" fill="none" stroke="rgba(255,255,255,0.035)" stroke-width="1"/>
+    </pattern>
+    <marker id="arr-indigo" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L0,7 L8,3.5z" fill="#6366f1"/>
+    </marker>
+    <marker id="arr-green" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L0,7 L8,3.5z" fill="#22c55e"/>
+    </marker>
+    <marker id="arr-amber" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L0,7 L8,3.5z" fill="#f59e0b"/>
+    </marker>
+    <marker id="arr-purple" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L0,7 L8,3.5z" fill="#8b5cf6"/>
+    </marker>
+    <marker id="arr-cyan" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L0,7 L8,3.5z" fill="#06b6d4"/>
+    </marker>
+  </defs>
+
+  <g id="vp">
+    <rect x="-20000" y="-20000" width="60000" height="60000" fill="url(#grid)"/>
+    <g id="conn-layer"></g>
+    <g id="table-layer"></g>
+  </g>
+</svg>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const TW = 276, HH = 46, RH = 21, PAD = 12, R = 10;
+
+function el(tag, a={}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(a)) e.setAttribute(k,v);
+  return e;
+}
+function tx(s, a={}) { const e=el('text',a); e.textContent=s; return e; }
+function th(t) { return HH + PAD + t.fields.length * RH + PAD; }
+
+/* ── TABLE DATA ─────────────────────────────────────────────────── */
+
+const TABLES = [
+  {
+    id:'org', label:'Organization', sub:'Tenant principal',
+    color:'#4f46e5', bg:'#12103d', x:460, y:80,
+    fields:[
+      {n:'id',            t:'cuid · PK',     k:'pk'},
+      {n:'name',          t:'String'},
+      {n:'slug',          t:'String · UNIQUE'},
+      {n:'apiKey',        t:'String · UNIQUE'},
+      {n:'logo',          t:'String?'},
+      {n:'brandColor',    t:'String? (#hex)'},
+      {n:'appNameFirst',  t:'String?'},
+      {n:'appNameSecond', t:'String?'},
+      {n:'createdAt',     t:'DateTime'},
+      {n:'updatedAt',     t:'DateTime'},
+    ]
+  },
+  {
+    id:'user', label:'User', sub:'Usuarios con acceso al panel',
+    color:'#0ea5e9', bg:'#041624', x:860, y:80,
+    fields:[
+      {n:'id',             t:'Int · PK',    k:'pk'},
+      {n:'email',          t:'String · UNIQUE'},
+      {n:'name',           t:'String?'},
+      {n:'password',       t:'String (hash)'},
+      {n:'role',           t:'superadmin|admin|user'},
+      {n:'organizationId', t:'FK → Organization', k:'fk'},
+      {n:'createdAt',      t:'DateTime'},
+      {n:'updatedAt',      t:'DateTime'},
+    ]
+  },
+  {
+    id:'lead', label:'Lead', sub:'Registro central del sistema',
+    color:'#10b981', bg:'#031710', x:860, y:420,
+    fields:[
+      {n:'id',                 t:'Int · PK',              k:'pk'},
+      {n:'organizationId',     t:'FK → Organization',     k:'fk'},
+      {n:'whatsappInstanceId', t:'FK? → WA Instance',     k:'fk'},
+      {n:'source',             t:'String (Facebook, Manual…)'},
+      {n:'name',               t:'String'},
+      {n:'email',              t:'String?'},
+      {n:'phone',              t:'String?'},
+      {n:'company',            t:'String?'},
+      {n:'role',               t:'String?'},
+      {n:'address',            t:'String?'},
+      {n:'city',               t:'String?'},
+      {n:'rawData',            t:'String (JSON extra)'},
+      {n:'initialScore',       t:'Int (0-100, por IA)'},
+      {n:'status',             t:'String → LeadStatus.name'},
+      {n:'notes',              t:'String?'},
+      {n:'createdAt',          t:'DateTime'},
+    ]
+  },
+  {
+    id:'config', label:'SystemConfig', sub:'Config clave-valor por org',
+    color:'#f59e0b', bg:'#170f00', x:860, y:960,
+    fields:[
+      {n:'id',             t:'Int · PK',           k:'pk'},
+      {n:'organizationId', t:'FK → Organization',  k:'fk'},
+      {n:'key',            t:'scoring_prompt / n8n_url…'},
+      {n:'value',          t:'String'},
+    ]
+  },
+  {
+    id:'custom', label:'CustomField', sub:'Campos extra por org',
+    color:'#e11d48', bg:'#180010', x:1220, y:520,
+    fields:[
+      {n:'id',             t:'Int · PK',          k:'pk'},
+      {n:'organizationId', t:'FK → Organization', k:'fk'},
+      {n:'fieldName',      t:'String (JSON key)'},
+      {n:'fieldLabel',     t:'String (UI label)'},
+      {n:'fieldType',      t:'text|number|date|select'},
+      {n:'required',       t:'Boolean'},
+      {n:'options',        t:'String? (JSON array)'},
+      {n:'showAsColumn',   t:'Boolean'},
+      {n:'position',       t:'Int'},
+    ]
+  },
+  {
+    id:'status', label:'LeadStatus', sub:'Estados del pipeline por org',
+    color:'#8b5cf6', bg:'#110d2e', x:460, y:480,
+    fields:[
+      {n:'id',             t:'cuid · PK',          k:'pk'},
+      {n:'organizationId', t:'FK → Organization',  k:'fk'},
+      {n:'name',           t:'String (Nuevo, Ganado…)'},
+      {n:'color',          t:'String (#hex)'},
+      {n:'isDefault',      t:'Boolean'},
+      {n:'position',       t:'Int (orden)'},
+      {n:'createdAt',      t:'DateTime'},
+    ]
+  },
+  {
+    id:'trigger', label:'StatusTrigger', sub:'Webhooks automaticos por estado',
+    color:'#ec4899', bg:'#18001a', x:460, y:900,
+    fields:[
+      {n:'id',             t:'cuid · PK',         k:'pk'},
+      {n:'statusId',       t:'FK → LeadStatus',   k:'fk'},
+      {n:'organizationId', t:'String (ref)'},
+      {n:'type',           t:'"webhook"'},
+      {n:'webhookUrl',     t:'String'},
+      {n:'fields',         t:'String? (JSON | null=all)'},
+      {n:'enabled',        t:'Boolean'},
+      {n:'createdAt',      t:'DateTime'},
+    ]
+  },
+  {
+    id:'wpInst', label:'WhatsAppInstance', sub:'Conexion de WhatsApp por org',
+    color:'#22c55e', bg:'#031708', x:80, y:480,
+    fields:[
+      {n:'id',             t:'cuid · PK',          k:'pk'},
+      {n:'organizationId', t:'FK → Organization',  k:'fk'},
+      {n:'name',           t:'String (Ventas, Soporte…)'},
+      {n:'phone',          t:'String?'},
+      {n:'pushName',       t:'String? (perfil WA)'},
+      {n:'createdAt',      t:'DateTime'},
+      {n:'updatedAt',      t:'DateTime'},
+    ]
+  },
+  {
+    id:'wpSess', label:'WhatsAppSession', sub:'Datos de sesion activa',
+    color:'#14b8a6', bg:'#021816', x:80, y:900,
+    fields:[
+      {n:'id',         t:'cuid · PK',          k:'pk'},
+      {n:'instanceId', t:'FK → WA Instance',   k:'fk'},
+      {n:'key',        t:'String'},
+      {n:'data',       t:'String (JSON session)'},
+      {n:'createdAt',  t:'DateTime'},
+      {n:'updatedAt',  t:'DateTime'},
+    ]
+  },
+  {
+    id:'license', label:'LicenseCode', sub:'Codigos de activacion de orgs',
+    color:'#f97316', bg:'#160900', x:80, y:80,
+    fields:[
+      {n:'id',             t:'cuid · PK',            k:'pk'},
+      {n:'code',           t:'String · UNIQUE'},
+      {n:'used',           t:'Boolean'},
+      {n:'usedAt',         t:'DateTime?'},
+      {n:'usedByEmail',    t:'String?'},
+      {n:'organizationId', t:'FK? → Organization',   k:'fk'},
+      {n:'createdAt',      t:'DateTime'},
+    ]
+  },
+  {
+    id:'passReset', label:'PasswordResetToken', sub:'Tokens temporales · sin FK de org',
+    color:'#64748b', bg:'#0d1220', x:1220, y:80,
+    fields:[
+      {n:'id',        t:'Int · PK',    k:'pk'},
+      {n:'email',     t:'String'},
+      {n:'token',     t:'String · UNIQUE'},
+      {n:'expiresAt', t:'DateTime'},
+      {n:'createdAt', t:'DateTime'},
+    ]
+  },
+  {
+    id:'wpCloud', label:'WhatsAppCloudAccount', sub:'Cuenta Cloud API de Meta por org',
+    color:'#06b6d4', bg:'#021820', x:80, y:1260,
+    fields:[
+      {n:'id',             t:'cuid · PK',          k:'pk'},
+      {n:'organizationId', t:'FK → Organization',  k:'fk'},
+      {n:'displayName',    t:'String (Ventas Cloud…)'},
+      {n:'phoneNumberId',  t:'String (ID de Meta)'},
+      {n:'accessToken',    t:'String (System Token)'},
+      {n:'wabaId',         t:'String (WABA ID)'},
+      {n:'appSecret',      t:'String (firma webhook)'},
+      {n:'verifyToken',    t:'String (verificar WH)'},
+      {n:'apiVersion',     t:'String @default(v21.0)'},
+      {n:'phone',          t:'String? (legible)'},
+      {n:'active',         t:'Boolean'},
+      {n:'createdAt',      t:'DateTime'},
+      {n:'updatedAt',      t:'DateTime'},
+    ]
+  },
+];
+
+const TM = {};
+TABLES.forEach(t => TM[t.id] = t);
+
+const CONNS = [
+  {f:'org', t:'user',      lb:'1:N', c:'#6366f1', m:'indigo'},
+  {f:'org', t:'lead',      lb:'1:N', c:'#6366f1', m:'indigo'},
+  {f:'org', t:'config',    lb:'1:N', c:'#6366f1', m:'indigo'},
+  {f:'org', t:'custom',    lb:'1:N', c:'#6366f1', m:'indigo'},
+  {f:'org', t:'status',    lb:'1:N', c:'#8b5cf6', m:'purple'},
+  {f:'org', t:'wpInst',    lb:'1:N', c:'#22c55e', m:'green'},
+  {f:'org', t:'license',   lb:'1:N', c:'#f59e0b', m:'amber', dash:true},
+  {f:'status',  t:'trigger', lb:'1:N', c:'#8b5cf6', m:'purple'},
+  {f:'wpInst',  t:'wpSess',  lb:'1:N', c:'#22c55e', m:'green'},
+  {f:'lead',    t:'wpInst',  lb:'N:1', c:'#f59e0b', m:'amber', dash:true},
+  {f:'org',     t:'wpCloud', lb:'1:N', c:'#06b6d4', m:'indigo'},
+  {f:'lead',    t:'wpCloud', lb:'N:1', c:'#f59e0b', m:'amber', dash:true},
+];
+
+/* ── RENDER TABLE ───────────────────────────────────────────────── */
+
+function renderTable(t) {
+  const h = th(t);
+  const g = el('g', {'data-id':t.id, transform:`translate(${t.x},${t.y})`, style:'cursor:move'});
+
+  // Shadow
+  g.appendChild(el('rect', {x:5,y:5,width:TW,height:h,rx:R,fill:'rgba(0,0,0,0.5)'}));
+  // Body
+  g.appendChild(el('rect', {x:0,y:0,width:TW,height:h,rx:R,fill:t.bg,stroke:t.color,'stroke-width':1.5}));
+  // Header (path: top-rounded only)
+  g.appendChild(el('path', {
+    d:`M${R} 0 H${TW-R} Q${TW} 0 ${TW} ${R} V${HH} H0 V${R} Q0 0 ${R} 0Z`,
+    fill:t.color
+  }));
+  // Separator
+  g.appendChild(el('line', {x1:0,y1:HH,x2:TW,y2:HH,stroke:'rgba(0,0,0,0.25)','stroke-width':1}));
+
+  // Table name
+  g.appendChild(tx(t.label, {
+    x:TW/2, y:16, 'text-anchor':'middle', 'dominant-baseline':'middle',
+    fill:'white', 'font-size':13, 'font-weight':700, 'font-family':'Segoe UI,system-ui,sans-serif'
+  }));
+  // Subtitle
+  g.appendChild(tx(t.sub, {
+    x:TW/2, y:34, 'text-anchor':'middle', 'dominant-baseline':'middle',
+    fill:'rgba(255,255,255,0.55)', 'font-size':8.5, 'font-family':'Segoe UI,system-ui,sans-serif'
+  }));
+
+  // Fields
+  t.fields.forEach((f, i) => {
+    const fy = HH + PAD + i * RH + RH / 2;
+    // Alt row
+    if (i % 2 === 0)
+      g.appendChild(el('rect', {x:1, y:HH+PAD+i*RH, width:TW-2, height:RH, fill:'rgba(255,255,255,0.022)'}));
+
+    const nc = f.k==='pk' ? '#fbbf24' : f.k==='fk' ? '#60a5fa' : '#d1d5db';
+    const fw = f.k ? 600 : 400;
+
+    g.appendChild(tx(f.n, {
+      x:12, y:fy, 'dominant-baseline':'middle',
+      fill:nc, 'font-size':10.5, 'font-weight':fw, 'font-family':'Consolas,monospace'
+    }));
+    g.appendChild(tx(f.t, {
+      x:TW-10, y:fy, 'dominant-baseline':'middle', 'text-anchor':'end',
+      fill:'#3d4d63', 'font-size':9, 'font-family':'Consolas,monospace'
+    }));
+  });
+
+  return g;
+}
+
+/* ── RENDER CONNECTION ──────────────────────────────────────────── */
+
+function anchors(a, b) {
+  const ah = th(a), bh = th(b);
+  const acx = a.x+TW/2, acy = a.y+ah/2;
+  const bcx = b.x+TW/2, bcy = b.y+bh/2;
+  const dx = bcx-acx, dy = bcy-acy;
+  let fx,fy,tx2,ty;
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    if (dx>=0) { fx=a.x+TW; fy=acy; tx2=b.x;    ty=bcy; }
+    else       { fx=a.x;    fy=acy; tx2=b.x+TW;  ty=bcy; }
+  } else {
+    if (dy>=0) { fx=acx; fy=a.y+ah; tx2=bcx; ty=b.y;    }
+    else       { fx=acx; fy=a.y;    tx2=bcx; ty=b.y+bh;  }
+  }
+  return {fx,fy,tx2,ty};
+}
+
+function renderConn(conn) {
+  const a=TM[conn.f], b=TM[conn.t];
+  if (!a||!b) return null;
+  const {fx,fy,tx2,ty} = anchors(a,b);
+  const dx=tx2-fx, dy=ty-fy, s=0.5;
+  let c1x,c1y,c2x,c2y;
+  if (Math.abs(dx)>=Math.abs(dy)) {
+    c1x=fx+dx*s; c1y=fy; c2x=tx2-dx*s; c2y=ty;
+  } else {
+    c1x=fx; c1y=fy+dy*s; c2x=tx2; c2y=ty-dy*s;
+  }
+  const d=`M${fx} ${fy} C${c1x} ${c1y},${c2x} ${c2y},${tx2} ${ty}`;
+  const g2=el('g');
+  g2.appendChild(el('path', {
+    d, fill:'none', stroke:conn.c, 'stroke-width':1.8,
+    'stroke-dasharray':conn.dash?'7 4':'none',
+    'marker-end':`url(#arr-${conn.m})`, opacity:0.72
+  }));
+  const mx=(fx+tx2)/2, my=(fy+ty)/2;
+  g2.appendChild(el('rect', {x:mx-13,y:my-9,width:26,height:16,rx:4,fill:'#0c1120',stroke:conn.c,'stroke-width':1,opacity:0.95}));
+  g2.appendChild(tx(conn.lb, {
+    x:mx, y:my, 'text-anchor':'middle', 'dominant-baseline':'middle',
+    fill:conn.c, 'font-size':9.5, 'font-weight':700, 'font-family':'Segoe UI,system-ui'
+  }));
+  return g2;
+}
+
+/* ── MAIN ───────────────────────────────────────────────────────── */
+
+const CL = document.getElementById('conn-layer');
+const TL = document.getElementById('table-layer');
+
+function redrawConns() {
+  CL.innerHTML='';
+  CONNS.forEach(c => { const g=renderConn(c); if(g) CL.appendChild(g); });
+}
+
+function svgPt(e) {
+  const s=document.getElementById('svg');
+  const p=s.createSVGPoint();
+  p.x=e.clientX; p.y=e.clientY;
+  return p.matrixTransform(document.getElementById('vp').getScreenCTM().inverse());
+}
+
+function init() {
+  TL.innerHTML='';
+  redrawConns();
+
+  TABLES.forEach(t => {
+    const g = renderTable(t);
+    let dragging=false, ox=0, oy=0;
+
+    g.addEventListener('mousedown', e => {
+      e.stopPropagation();
+      dragging=true;
+      const p=svgPt(e); ox=p.x-t.x; oy=p.y-t.y;
+      g.style.filter='drop-shadow(0 0 16px '+t.color+'66)';
+      TL.appendChild(g); // bring to front
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const p=svgPt(e);
+      t.x=p.x-ox; t.y=p.y-oy;
+      g.setAttribute('transform', `translate(${t.x},${t.y})`);
+      redrawConns();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging=false;
+      g.style.filter='';
+    });
+
+    TL.appendChild(g);
+  });
+}
+
+/* ── PAN / ZOOM ─────────────────────────────────────────────────── */
+
+let vpTx=60, vpTy=40, vpSc=0.76;
+const vpEl=document.getElementById('vp');
+function applyVP() { vpEl.setAttribute('transform',`translate(${vpTx},${vpTy}) scale(${vpSc})`); }
+
+let panning=false, psx=0, psy=0;
+const SVG=document.getElementById('svg');
+
+SVG.addEventListener('mousedown', e => {
+  if (e.target.closest('[data-id]')) return;
+  panning=true; psx=e.clientX-vpTx; psy=e.clientY-vpTy;
+  SVG.style.cursor='grabbing';
+});
+window.addEventListener('mousemove', e => {
+  if (!panning) return;
+  vpTx=e.clientX-psx; vpTy=e.clientY-psy; applyVP();
+});
+window.addEventListener('mouseup', () => { panning=false; SVG.style.cursor='default'; });
+SVG.addEventListener('wheel', e => {
+  e.preventDefault();
+  const d=e.deltaY<0?1.1:0.9;
+  const r=SVG.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  vpTx=mx-(mx-vpTx)*d; vpTy=my-(my-vpTy)*d; vpSc*=d; applyVP();
+}, {passive:false});
+
+function resetView() { vpTx=60; vpTy=40; vpSc=0.76; applyVP(); }
+
+applyVP();
+init();
+</script>
+</body>
+</html>

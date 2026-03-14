@@ -54,6 +54,9 @@ const g = globalThis as unknown as {
     __waAccountInfo: Map<string, AccountInfo>;
     __waRestorePromise: Promise<void> | null;
     __waMessageBuffers: Map<string, MessageBuffer>;
+    __waConnectingAt: Map<string, number>;   // timestamp when 'connecting' state started
+    __waReconnectAttempts: Map<string, number>; // consecutive reconnect attempts per instance
+    __waWatchdog: ReturnType<typeof setInterval> | null;
 };
 
 // All maps are now keyed by instanceId
@@ -63,6 +66,47 @@ const connectionState = (g.__waState ??= new Map());
 const accountInfo = (g.__waAccountInfo ??= new Map());
 // Buffer key = `${organizationId}:${phone}`
 const messageBuffers = (g.__waMessageBuffers ??= new Map());
+const connectingAt = (g.__waConnectingAt ??= new Map());
+const reconnectAttempts = (g.__waReconnectAttempts ??= new Map());
+
+// Watchdog: detects sockets stuck in 'connecting' without a QR code
+const WATCHDOG_INTERVAL_MS = 30_000;   // run every 30s
+const CONNECTING_TIMEOUT_MS = 90_000;  // force-reconnect if stuck >90s with no QR
+
+function getReconnectDelay(instanceId: string): number {
+    const attempts = reconnectAttempts.get(instanceId) ?? 0;
+    // Exponential backoff: 3s, 6s, 12s, 24s, 48s, 60s (max)
+    const delay = Math.min(3000 * Math.pow(2, attempts), 60_000);
+    // Add ±20% jitter to avoid reconnection storms
+    return delay * (0.8 + Math.random() * 0.4);
+}
+
+function startWatchdog() {
+    if (g.__waWatchdog) return; // already running (survives HMR)
+    g.__waWatchdog = setInterval(() => {
+        const now = Date.now();
+        for (const [instanceId, state] of connectionState.entries()) {
+            if (state !== 'connecting') continue;
+            const hasQr = qrCodes.has(instanceId);
+            if (hasQr) continue; // waiting for user to scan — don't interfere
+            const startedAt = connectingAt.get(instanceId) ?? now;
+            const elapsed = now - startedAt;
+            if (elapsed > CONNECTING_TIMEOUT_MS) {
+                console.log(`[WhatsApp] Watchdog: instance ${instanceId} stuck connecting for ${Math.round(elapsed / 1000)}s — force reconnecting`);
+                const sock = sessions.get(instanceId);
+                if (sock) {
+                    try { sock.end(undefined); } catch { /* ignore */ }
+                    sessions.delete(instanceId);
+                }
+                connectionState.set(instanceId, 'closed');
+                connectingAt.delete(instanceId);
+                connectToWhatsApp(instanceId).catch(err =>
+                    console.error(`[WhatsApp] Watchdog reconnect failed for ${instanceId}:`, err)
+                );
+            }
+        }
+    }, WATCHDOG_INTERVAL_MS);
+}
 
 // Lazy restore: runs once on first function call after server start
 async function ensureSessionsRestored() {
@@ -222,6 +266,8 @@ export async function connectToWhatsApp(instanceId: string) {
     const organizationId = instance.organizationId;
 
     connectionState.set(instanceId, 'connecting');
+    connectingAt.set(instanceId, Date.now());
+    startWatchdog();
 
     const { state, saveCreds } = await usePrismaAuthState(instanceId);
     const { version } = await fetchLatestBaileysVersion();
@@ -235,6 +281,7 @@ export async function connectToWhatsApp(instanceId: string) {
         printQRInTerminal: false,
         logger: pino({ level: "silent" }) as any,
         generateHighQualityLinkPreview: true,
+        keepAliveIntervalMs: 10_000, // Ping every 10s (default: 30s) — detects dead connections faster
     });
 
     // Store socket reference immediately so getQR/getStatus can find it
@@ -251,21 +298,25 @@ export async function connectToWhatsApp(instanceId: string) {
         }
 
         if (connection === 'close') {
-            const shouldReconnect = (lastDisconnect?.error as any)?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log(`Connection closed for instance ${instanceId}, reconnecting: ${shouldReconnect}`);
+            const statusCode = (lastDisconnect?.error as any)?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            console.log(`Connection closed for instance ${instanceId}, statusCode=${statusCode}, reconnecting: ${shouldReconnect}`);
 
             sessions.delete(instanceId);
             qrCodes.delete(instanceId);
             connectionState.set(instanceId, 'closed');
+            connectingAt.delete(instanceId);
 
             if (shouldReconnect) {
-                // Delay reconnection to avoid reconnection storms
-                const delay = 3000 + Math.random() * 2000; // 3-5 seconds
-                console.log(`[WhatsApp] Reconnecting instance ${instanceId} in ${Math.round(delay / 1000)}s...`);
+                const attempts = reconnectAttempts.get(instanceId) ?? 0;
+                reconnectAttempts.set(instanceId, attempts + 1);
+                const delay = getReconnectDelay(instanceId);
+                console.log(`[WhatsApp] Reconnecting instance ${instanceId} in ${Math.round(delay / 1000)}s (attempt #${attempts + 1})...`);
                 setTimeout(() => connectToWhatsApp(instanceId), delay);
             } else {
                 // Logged out: creds are invalid, clear them so next connect starts fresh
                 console.log(`[WhatsApp] Session logged out for instance ${instanceId}, clearing stored creds`);
+                reconnectAttempts.delete(instanceId);
                 await prisma.whatsAppSession.deleteMany({ where: { instanceId } });
             }
         } else if (connection === 'open') {
@@ -275,6 +326,8 @@ export async function connectToWhatsApp(instanceId: string) {
             console.log(`[WhatsApp] Connected instance ${instanceId}: ${name} (${phone})`);
             qrCodes.delete(instanceId);
             connectionState.set(instanceId, 'open');
+            connectingAt.delete(instanceId);
+            reconnectAttempts.delete(instanceId); // reset backoff counter on successful connection
             accountInfo.set(instanceId, { phone, name, jid });
 
             // Save phone and pushName to the instance record
