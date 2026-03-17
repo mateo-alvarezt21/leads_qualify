@@ -42,6 +42,9 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
     const [selectedLead, setSelectedLead] = useState<LeadWithInstance | null>(null);
     const [showFilters, setShowFilters] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => { setMounted(true); }, []);
 
     // Auto-refresh: poll for new leads every 10 seconds
     useEffect(() => {
@@ -355,8 +358,8 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
                                                     <span className="text-xs text-slate-500">—</span>
                                                 )}
                                             </td>
-                                            <td className="px-3 py-3 text-slate-500 whitespace-nowrap text-xs" suppressHydrationWarning>
-                                                {new Date(lead.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            <td className="px-3 py-3 text-slate-500 whitespace-nowrap text-xs">
+                                                {mounted ? new Date(lead.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
                                             </td>
                                             {columnFields.map(cf => {
                                                 const raw = leadRawData[cf.fieldName];
