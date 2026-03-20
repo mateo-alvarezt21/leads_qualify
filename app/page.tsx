@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { LeadTable } from '@/components/LeadTable';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { NavHeader } from '@/components/NavHeader';
@@ -83,14 +84,16 @@ export default async function Home({
       />
 
       <div className="max-w-7xl mx-auto p-6 md:p-8">
-        <LeadTable
-          initialLeads={leads}
-          totalPages={totalPages}
-          currentPage={page}
-          totalCount={totalCount}
-          customFields={customFields}
-          leadStatuses={leadStatuses}
-        />
+        <Suspense>
+          <LeadTable
+            initialLeads={leads}
+            totalPages={totalPages}
+            currentPage={page}
+            totalCount={totalCount}
+            customFields={customFields}
+            leadStatuses={leadStatuses}
+          />
+        </Suspense>
 
         <AnalyticsDashboard organizationId={session.user.organizationId} />
       </div>

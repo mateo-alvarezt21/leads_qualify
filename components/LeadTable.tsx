@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo, useTransition, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo, useTransition, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Lead, CustomField } from '@prisma/client';
 import { Search, Download, Filter, X, AlertCircle, Trash2, ChevronRight } from 'lucide-react';
 import { AddLeadDialog } from './AddLeadDialog';
@@ -33,18 +33,65 @@ const formatNumber = (raw: string | number) => {
 export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, customFields = [], leadStatuses = [] }: LeadTableProps) {
     const columnFields = customFields.filter(cf => cf.showAsColumn);
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { t } = useLanguage();
-    const [textFilter, setTextFilter] = useState('');
-    const [statusFilter, setStatusFilter] = useState('Todos');
-    const [sourceFilter, setSourceFilter] = useState('Todos');
+    const [textFilter, setTextFilter] = useState(searchParams.get('search') || '');
+    const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'Todos');
+    const [sourceFilter, setSourceFilter] = useState(searchParams.get('source') || 'Todos');
     const [minTemp, setMinTemp] = useState('');
     const [maxTemp, setMaxTemp] = useState('');
     const [selectedLead, setSelectedLead] = useState<LeadWithInstance | null>(null);
-    const [showFilters, setShowFilters] = useState(false);
+    const [showFilters, setShowFilters] = useState(
+        !!(searchParams.get('status') || searchParams.get('source'))
+    );
     const [isPending, startTransition] = useTransition();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => { setMounted(true); }, []);
+
+    // Helper to update URL query params and reset to page 1
+    const pushFilter = useCallback((key: string, value: string) => {
+        const params = new URLSearchParams(window.location.search);
+        if (value && value !== 'Todos') {
+            params.set(key, value);
+        } else {
+            params.delete(key);
+        }
+        params.set('page', '1');
+        router.push(`?${params.toString()}`);
+    }, [router]);
+
+    // Debounced text search → URL
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            pushFilter('search', textFilter);
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [textFilter, pushFilter]);
+
+    const handleStatusChange = (value: string) => {
+        setStatusFilter(value);
+        pushFilter('status', value);
+    };
+
+    const handleSourceChange = (value: string) => {
+        setSourceFilter(value);
+        pushFilter('source', value);
+    };
+
+    const handleClearFilters = () => {
+        setMinTemp('');
+        setMaxTemp('');
+        setStatusFilter('Todos');
+        setSourceFilter('Todos');
+        setTextFilter('');
+        const params = new URLSearchParams(window.location.search);
+        params.delete('search');
+        params.delete('status');
+        params.delete('source');
+        params.set('page', '1');
+        router.push(`?${params.toString()}`);
+    };
 
     // Auto-refresh: poll for new leads every 10 seconds
     useEffect(() => {
@@ -79,19 +126,12 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
     // Unique sources for filter
     const sources = Array.from(new Set(initialLeads.map(l => l.source)));
 
+    // Text/status/source are filtered server-side via URL params.
+    // Only score range is filtered client-side (uses computed currentScore with decay).
     const filtered = processedLeads.filter(l => {
-        const matchesText =
-            l.name.toLowerCase().includes(textFilter.toLowerCase()) ||
-            (l.email && l.email.toLowerCase().includes(textFilter.toLowerCase()));
-
-        const matchesStatus = statusFilter === 'Todos' || l.status === statusFilter;
-        const matchesSource = sourceFilter === 'Todos' || l.source === sourceFilter;
-
         const min = minTemp ? parseInt(minTemp) : 0;
         const max = maxTemp ? parseInt(maxTemp) : 100;
-        const matchesTemp = l.currentScore >= min && l.currentScore <= max;
-
-        return matchesText && matchesStatus && matchesSource && matchesTemp;
+        return l.currentScore >= min && l.currentScore <= max;
     });
 
     const downloadCSV = () => {
@@ -202,7 +242,7 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
                             <select
                                 className="w-full text-sm p-2 border border-zinc-200 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 focus:border-brand outline-none"
                                 value={statusFilter}
-                                onChange={e => setStatusFilter(e.target.value)}
+                                onChange={e => handleStatusChange(e.target.value)}
                             >
                                 <option value="Todos">{t.filters.statusAll}</option>
                                 {leadStatuses.map(s => (
@@ -215,7 +255,7 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
                             <select
                                 className="w-full text-sm p-2 border border-zinc-200 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 focus:border-brand outline-none"
                                 value={sourceFilter}
-                                onChange={e => setSourceFilter(e.target.value)}
+                                onChange={e => handleSourceChange(e.target.value)}
                             >
                                 <option value="Todos">{t.filters.sourceAll}</option>
                                 {sources.map(s => <option key={s} value={s}>{s}</option>)}
@@ -244,7 +284,7 @@ export function LeadTable({ initialLeads, totalPages, currentPage, totalCount, c
                                     placeholder="100"
                                 />
                                 <button
-                                    onClick={() => { setMinTemp(''); setMaxTemp(''); setStatusFilter('Todos'); setSourceFilter('Todos'); }}
+                                    onClick={handleClearFilters}
                                     className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
                                     title={t.filters.clearFilters}
                                 >
