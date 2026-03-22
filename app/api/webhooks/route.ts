@@ -36,7 +36,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Invalid API Key' }, { status: 403 });
         }
 
-        const body = await req.json();
+        // Parse body with encoding fallback: try UTF-8 first, then Latin-1 (Windows-1252)
+        const rawBuffer = await req.arrayBuffer();
+        const utf8Text = new TextDecoder('utf-8', { fatal: false }).decode(rawBuffer);
+        // If replacement chars found, the client sent Latin-1 bytes — re-decode correctly
+        const bodyText = utf8Text.includes('\uFFFD')
+            ? new TextDecoder('latin1').decode(rawBuffer)
+            : utf8Text;
+        const body = JSON.parse(bodyText);
 
         // 2. Validate Body
         const validation = LeadSchema.safeParse(body);
