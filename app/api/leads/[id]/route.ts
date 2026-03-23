@@ -41,17 +41,36 @@ export async function PATCH(
             : utf8Text;
         const body = JSON.parse(bodyText);
 
-        // Only allow updating these fields
-        const allowed = ['name', 'email', 'phone', 'company', 'role', 'address', 'city', 'status', 'notes', 'source'];
+        // Standard updatable fields
+        const standardFields = ['name', 'email', 'phone', 'company', 'role', 'address', 'city', 'status', 'notes', 'source'];
         const updateData: Record<string, unknown> = {};
-        for (const field of allowed) {
+        for (const field of standardFields) {
             if (body[field] !== undefined) {
                 updateData[field] = body[field];
             }
         }
 
+        // Custom fields: any key not in standard fields gets merged into rawData
+        const orgCustomFields = await prisma.customField.findMany({
+            where: { organizationId: org.id },
+            select: { fieldName: true },
+        });
+        const customFieldNames = new Set(orgCustomFields.map(f => f.fieldName));
+
+        const customUpdates: Record<string, unknown> = {};
+        for (const key of Object.keys(body)) {
+            if (!standardFields.includes(key) && customFieldNames.has(key)) {
+                customUpdates[key] = body[key];
+            }
+        }
+
+        if (Object.keys(customUpdates).length > 0) {
+            const currentRaw = (() => { try { return JSON.parse(existing.rawData || '{}'); } catch { return {}; } })();
+            updateData.rawData = JSON.stringify({ ...currentRaw, ...customUpdates });
+        }
+
         if (Object.keys(updateData).length === 0) {
-            return NextResponse.json({ success: false, error: 'No valid fields to update' }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'No valid fields to update. Make sure custom fields are registered in Settings.' }, { status: 400 });
         }
 
         const updatedLead = await prisma.lead.update({
